@@ -1,0 +1,14 @@
+[Unit]
+Description=LDAP based RADIUS server with MDA support
+After=network.target
+
+[Service]
+WorkingDirectory=/usr/local/rserver
+ExecStart=/usr/bin/sh -c '/usr/local/rserver/rserver >logs 2>&1'
+Restart=always
+Type=simple
+User=nobody
+Group=nobody
+
+[Install]
+WantedBy=multi-user.target
