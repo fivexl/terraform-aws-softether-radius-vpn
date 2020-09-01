@@ -29,3 +29,5 @@ override.tf.json
 # example: *tfplan*
 
 packer-manifest.json
+/.idea/
+/deployment/terraform/testing.tfvars

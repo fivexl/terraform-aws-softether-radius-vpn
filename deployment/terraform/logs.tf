@@ -7,7 +7,7 @@ locals {
 resource "aws_cloudwatch_log_group" "rserver" {
   name              = local.rserver_log
   retention_in_days = var.cloudwatch_loggroup_retention
-  tags              = "${module.tags.default}"
+  tags              = var.tags
 }
 
 resource "aws_cloudwatch_log_group" "vpn_server_log" {

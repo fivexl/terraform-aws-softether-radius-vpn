@@ -3,8 +3,8 @@ variable "vpc_id" {
 }
 
 variable "subnet_tags" {
-  type = map
-  default = { "Type": "Public" }
+  type    = map
+  default = { "Type" : "Public" }
 }
 
 variable "dns_zone_name" {
@@ -20,7 +20,7 @@ variable "spot_price" {
 }
 
 variable "push_route" {
-  default = "10.00.0.0/255.0.0.0/192.168.30.1"
+  default = "10.0.0.0/255.0.0.0/192.168.30.1"
 }
 
 variable "target_cidr" {

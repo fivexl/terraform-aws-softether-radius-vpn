@@ -2,7 +2,7 @@ data "aws_caller_identity" "i" {}
 
 data "aws_ami" "ami" {
   most_recent = true
-  owners      = ["${data.aws_caller_identity.i.account_id}"]
+  owners      = [data.aws_caller_identity.i.account_id]
   name_regex  = "softether-radius-vpn*"
 }
 
@@ -51,17 +51,15 @@ resource "aws_key_pair" "vpn" {
 
 # Install updates and restart instance
 resource "aws_instance" "vpn" {
-
+  source_dest_check           = false
   ami                         = data.aws_ami.ami.id
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.vpn.key_name
-  subnet_id                   = "${element(data.aws_subnet_ids.public_subnets.ids, 0)}"
+  subnet_id                   = sort(data.aws_subnet_ids.public_subnets.ids)[0]
   vpc_security_group_ids      = [aws_security_group.vpn_sg.id]
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.vpn.name
-
-  tags = merge(map("Name", "vpn"), var.tags)
-
+  tags                        = merge(map("Name", "vpn"), var.tags)
   # Clean up
   user_data = <<DATA
 #!/bin/bash
@@ -108,8 +106,7 @@ resource "random_string" "server_password" {
 }
 
 data "template_file" "softether_config" {
-  template = file("${path.module}/softether.config.template")
-
+  template = file("${path.module}/templates/softether.config.template")
   vars = {
     PSK             = random_string.psk.result
     RADIUS_SECRET   = random_string.radius_secret.result
@@ -119,8 +116,7 @@ data "template_file" "softether_config" {
 }
 
 data "template_file" "config_gcfg" {
-  template = file("${path.module}/config.gcfg.template")
-
+  template = file("${path.module}/templates/config.gcfg.template")
   vars = {
     RADIUS_SECRET = random_string.radius_secret.result
     LDAP_ADDR     = var.ldap_addr
@@ -133,16 +129,14 @@ data "template_file" "config_gcfg" {
 }
 
 data "template_file" "iptables_rules" {
-  template = file("${path.module}/iptables.rules.template")
-
+  template = file("${path.module}/templates/iptables.rules.template")
   vars = {
     TARGET_CIDR = var.target_cidr
   }
 }
 
 data "template_file" "awslogs_conf" {
-  template = file("${path.module}/awslogs.conf.template")
-
+  template = file("${path.module}/templates/awslogs.conf.template")
   vars = {
     RSERVER_LOG      = local.rserver_log
     VPN_SERVER_LOG   = local.vpn_server_log

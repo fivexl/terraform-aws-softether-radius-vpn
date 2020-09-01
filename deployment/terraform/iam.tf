@@ -8,13 +8,15 @@ data "aws_iam_policy_document" "vpn" {
       "logs:CreateLogGroup"
     ]
 
-    resources = ["${aws_cloudwatch_log_group.rserver.arn}",
-                 "${aws_cloudwatch_log_group.rserver.arn}:log-stream:*",
-                 "${aws_cloudwatch_log_group.vpn_server_log.arn}",
-                 "${aws_cloudwatch_log_group.vpn_server_log.arn}:log-stream:*",
-                 "${aws_cloudwatch_log_group.vpn_security_log.arn}",
-                 "${aws_cloudwatch_log_group.vpn_security_log.arn}:log-stream:*"]
-    }
+    resources = [
+      aws_cloudwatch_log_group.rserver.arn,
+      "${aws_cloudwatch_log_group.rserver.arn}:log-stream:*",
+      aws_cloudwatch_log_group.vpn_server_log.arn,
+      "${aws_cloudwatch_log_group.vpn_server_log.arn}:log-stream:*",
+      aws_cloudwatch_log_group.vpn_security_log.arn,
+      "${aws_cloudwatch_log_group.vpn_security_log.arn}:log-stream:*"
+    ]
+  }
 }
 
 data "aws_iam_policy_document" "trust" {
