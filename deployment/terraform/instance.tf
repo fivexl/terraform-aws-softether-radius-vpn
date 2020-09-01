@@ -60,37 +60,7 @@ resource "aws_instance" "vpn" {
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.vpn.name
   tags                        = merge(map("Name", "vpn"), var.tags)
-  # Clean up
-  user_data = <<DATA
-#!/bin/bash
-
-# Here we need to generate file from softether.config.template into softether.config
-sudo /usr/local/vpnserver/vpncmd localhost:5555 /SERVER /IN:softether.config /OUT:config.log
-sudo systemctl restart vpnserver
-
-# Before doing this we need to generate config.gcfg.template and put it to /usr/local/rserver
-sudo systemctl enable rserver.service
-sudo systemctl start rserver.service
-
-# We also need to generate awslogs.conf.template and put it to
-# /etc/awslogs/awslogs.conf
-sudo systemctl enable awslogsd.service
-
-# Finaly, render template iptables.rules.template into /etc/iptables.rules
-sudo /usr/bin/iptablesload
-
-# Apply system configuration
-sudo sysctl -p
-
-# Those are useful when VPN is not working for some reason
-# (you can check those logs if you go EC2 -> select instance -> Actions -> Instance Settings -> Get System Log)
-sudo systemctl status rserver.service
-sudo systemctl status vpnserver
-
-# Some logs
-sudo journalctl -eu rserver --no-pager --lines 25
-sudo journalctl -eu vpnserver --no-pager --lines 25
-DATA
+  user_data                   = data.template_cloudinit_config.vpn_config.rendered
 }
 
 resource "random_string" "psk" {
@@ -141,5 +111,84 @@ data "template_file" "awslogs_conf" {
     RSERVER_LOG      = local.rserver_log
     VPN_SERVER_LOG   = local.vpn_server_log
     VPN_SECURITY_LOG = local.vpn_security_log
+  }
+}
+
+# TODO: Enable gzip and base64 (only together)
+data "template_cloudinit_config" "vpn_config" {
+  gzip          = false
+  base64_encode = false
+  # Generate file from softether.config.template into softether.config
+  /*
+  [   46.515346] cloud-init[3430]: /var/lib/cloud/instance/scripts/part-001: line 10: syntax error near unexpected token `('
+  [   46.525012] cloud-init[3430]: /var/lib/cloud/instance/scripts/part-001: line 10: `IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:no /PSK:"123(@nk[9[@(123" /DEFAULTHUB:default'
+  [   46.537391] cloud-init[3430]: Sep 01 09:25:32 cloud-init[3430]: util.py[WARNING]: Failed running /var/lib/cloud/instance/scripts/part-001 [2]
+  */
+  part {
+    content_type = "text/x-shellscript"
+    content      = <<-EOF
+    #!/bin/bash
+    sudo mkdir -p /usr/local/vpnserver/ && sudo touch /usr/local/vpnserver/softether.config
+    sudo echo "${data.template_file.softether_config.rendered}" > /usr/local/vpnserver/softether.config
+    sudo /usr/local/vpnserver/vpncmd localhost:5555 /SERVER /IN:softether.config /OUT:config.log
+    sudo systemctl restart vpnserver
+    EOF
+  }
+  # Generate config.gcfg.template and put it to /usr/local/rserver
+  part {
+    content_type = "text/x-shellscript"
+    content      = <<-EOF
+    #!/bin/bash
+    sudo touch /usr/local/rserver/config.gcfg
+    sudo echo "${data.template_file.config_gcfg.rendered}" > /usr/local/rserver/config.gcfg
+    sudo chmod 700 /usr/local/rserver/config.gcfg && sudo chown nobody:nobody /usr/local/rserver/config.gcfg
+    sudo systemctl enable rserver.service
+    sudo systemctl start rserver.service
+    EOF
+  }
+  # Generate awslogs.conf.template and put it to /etc/awslogs/awslogs.conf
+  part {
+    content_type = "text/x-shellscript"
+    content      = <<-EOF
+    #!/bin/bash
+    sudo mkdir -p /etc/awslogs/ && sudo touch /etc/awslogs/awslogs.conf
+    sudo echo "${data.template_file.awslogs_conf.rendered}" > /etc/awslogs/awslogs.conf
+    sudo systemctl enable awslogsd.service
+    sudo systemctl start awslogsd.service
+    EOF
+  }
+  # Render template iptables.rules.template into /etc/iptables.rules and
+  part {
+    content_type = "text/x-shellscript"
+    content      = <<-EOF
+    #!/bin/bash
+    sudo touch /etc/iptables.rules
+    sudo echo TEST---TEST
+    sudo echo
+    sudo echo ${data.template_file.iptables_rules.rendered}
+    sudo echo TEST---TEST
+    sudo echo "${data.template_file.iptables_rules.rendered}" > /etc/iptables.rules
+    sudo /usr/bin/iptablesload
+    EOF
+  }
+  # Apply system configuration
+  part {
+    content_type = "text/x-shellscript"
+    content      = <<-EOF
+    #!/bin/bash
+    sudo sysctl -p
+    EOF
+  }
+  # Those are useful when VPN is not working for some reason
+  # (you can check those logs if you go EC2 -> select instance -> Actions -> Instance Settings -> Get System Log)
+  part {
+    content_type = "text/x-shellscript"
+    content      = <<-EOF
+    #!/bin/bash
+    sudo systemctl status rserver.service
+    sudo systemctl status vpnserver
+    sudo journalctl -eu rserver --no-pager --lines 25
+    sudo journalctl -eu vpnserver --no-pager --lines 25
+    EOF
   }
 }
