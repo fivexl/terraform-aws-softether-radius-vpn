@@ -62,3 +62,19 @@ variable "cloudwatch_loggroup_name" {
 variable "cloudwatch_loggroup_retention" {
   default = 90
 }
+
+variable "path_softether_config" {
+  default = "/usr/local/vpnserver/softether.config"
+}
+
+variable "path_rserver_config" {
+  default = "/usr/local/rserver/config.gcfg"
+}
+
+variable "path_iptables_rules" {
+  default = "/etc/iptables.rules"
+}
+
+variable "path_awslogs_config" {
+  default = "/etc/awslogs/awslogs.conf"
+}

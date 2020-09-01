@@ -1,3 +1,5 @@
+#!/bin/bash
+sudo tee "${FILE_PATH}" > /dev/null <<EOL
 [Radius]
 Listen=127.0.0.1:1812
 Secret="${RADIUS_SECRET}"
@@ -9,3 +11,4 @@ Enabled="${DUO_ENABLED}"
 IKey="${DUO_IKEY}"
 SKey="${DUO_SKEY}"
 APIHost="${DUO_API_HOST}"
+EOL

@@ -1,3 +1,5 @@
+#!/bin/bash
+sudo tee "${FILE_PATH}" > /dev/null <<EOL
 [general]
 state_file = /etc/awslogs/state
 
@@ -24,3 +26,4 @@ buffer_duration = 5000
 log_stream_name = {instance_id}
 initial_position = start_of_file
 log_group_name = "${VPN_SECURITY_LOG}"
+EOL

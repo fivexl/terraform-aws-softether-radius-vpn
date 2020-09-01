@@ -1,3 +1,5 @@
+#!/bin/bash
+sudo tee "${FILE_PATH}" > /dev/null <<EOL
 Hub DEFAULT
 UserCreate * /GROUP:none /REALNAME:"Radius" /NOTE:"Used for Radius/MFA Auth"
 UserList
@@ -13,3 +15,4 @@ ListenerDisable 443
 ListenerDisable 992
 ListenerDisable 1194
 Flush
+EOL

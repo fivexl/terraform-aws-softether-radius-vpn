@@ -76,17 +76,18 @@ resource "random_string" "server_password" {
 }
 
 data "template_file" "softether_config" {
-  template = file("${path.module}/templates/softether.config.template")
+  template = file("${path.module}/templates/softether.config.tpl.sh")
   vars = {
     PSK             = random_string.psk.result
     RADIUS_SECRET   = random_string.radius_secret.result
     SERVER_PASSWORD = random_string.server_password.result
     PUSH_ROUTE      = var.push_route
+    FILE_PATH       = var.path_softether_config
   }
 }
 
 data "template_file" "config_gcfg" {
-  template = file("${path.module}/templates/config.gcfg.template")
+  template = file("${path.module}/templates/config.gcfg.tpl.sh")
   vars = {
     RADIUS_SECRET = random_string.radius_secret.result
     LDAP_ADDR     = var.ldap_addr
@@ -95,22 +96,25 @@ data "template_file" "config_gcfg" {
     DUO_IKEY      = var.duo_ikey
     DUO_SKEY      = var.duo_skey
     DUO_API_HOST  = var.duo_api_host
+    FILE_PATH     = var.path_rserver_config
   }
 }
 
 data "template_file" "iptables_rules" {
-  template = file("${path.module}/templates/iptables.rules.template")
+  template = file("${path.module}/templates/iptables.rules.tpl.sh")
   vars = {
     TARGET_CIDR = var.target_cidr
+    FILE_PATH   = var.path_iptables_rules
   }
 }
 
 data "template_file" "awslogs_conf" {
-  template = file("${path.module}/templates/awslogs.conf.template")
+  template = file("${path.module}/templates/awslogs.conf.tpl.sh")
   vars = {
     RSERVER_LOG      = local.rserver_log
     VPN_SERVER_LOG   = local.vpn_server_log
     VPN_SECURITY_LOG = local.vpn_security_log
+    FILE_PATH        = var.path_awslogs_config
   }
 }
 
@@ -118,64 +122,39 @@ data "template_file" "awslogs_conf" {
 data "template_cloudinit_config" "vpn_config" {
   gzip          = false
   base64_encode = false
-  # Generate file from softether.config.template into softether.config
-  /*
-  [   46.515346] cloud-init[3430]: /var/lib/cloud/instance/scripts/part-001: line 10: syntax error near unexpected token `('
-  [   46.525012] cloud-init[3430]: /var/lib/cloud/instance/scripts/part-001: line 10: `IPsecEnable /L2TP:yes /L2TPRAW:no /ETHERIP:no /PSK:"123(@nk[9[@(123" /DEFAULTHUB:default'
-  [   46.537391] cloud-init[3430]: Sep 01 09:25:32 cloud-init[3430]: util.py[WARNING]: Failed running /var/lib/cloud/instance/scripts/part-001 [2]
-  */
+  # Generate softether_config.template and put it to /usr/local/vpnserver/softether.config
   part {
     content_type = "text/x-shellscript"
-    content      = <<-EOF
-    #!/bin/bash
-    sudo mkdir -p /usr/local/vpnserver/ && sudo touch /usr/local/vpnserver/softether.config
-    sudo echo "${data.template_file.softether_config.rendered}" > /usr/local/vpnserver/softether.config
-    sudo /usr/local/vpnserver/vpncmd localhost:5555 /SERVER /IN:softether.config /OUT:config.log
-    sudo systemctl restart vpnserver
-    EOF
+    content      = data.template_file.softether_config.rendered
   }
   # Generate config.gcfg.template and put it to /usr/local/rserver
   part {
     content_type = "text/x-shellscript"
-    content      = <<-EOF
-    #!/bin/bash
-    sudo touch /usr/local/rserver/config.gcfg
-    sudo echo "${data.template_file.config_gcfg.rendered}" > /usr/local/rserver/config.gcfg
-    sudo chmod 700 /usr/local/rserver/config.gcfg && sudo chown nobody:nobody /usr/local/rserver/config.gcfg
-    sudo systemctl enable rserver.service
-    sudo systemctl start rserver.service
-    EOF
+    content      = data.template_file.config_gcfg.rendered
   }
   # Generate awslogs.conf.template and put it to /etc/awslogs/awslogs.conf
   part {
     content_type = "text/x-shellscript"
-    content      = <<-EOF
-    #!/bin/bash
-    sudo mkdir -p /etc/awslogs/ && sudo touch /etc/awslogs/awslogs.conf
-    sudo echo "${data.template_file.awslogs_conf.rendered}" > /etc/awslogs/awslogs.conf
-    sudo systemctl enable awslogsd.service
-    sudo systemctl start awslogsd.service
-    EOF
+    content      = data.template_file.awslogs_conf.rendered
   }
   # Render template iptables.rules.template into /etc/iptables.rules and
   part {
     content_type = "text/x-shellscript"
-    content      = <<-EOF
-    #!/bin/bash
-    sudo touch /etc/iptables.rules
-    sudo echo TEST---TEST
-    sudo echo
-    sudo echo ${data.template_file.iptables_rules.rendered}
-    sudo echo TEST---TEST
-    sudo echo "${data.template_file.iptables_rules.rendered}" > /etc/iptables.rules
-    sudo /usr/bin/iptablesload
-    EOF
+    content      = data.template_file.iptables_rules.rendered
   }
-  # Apply system configuration
+  # Post config
   part {
     content_type = "text/x-shellscript"
     content      = <<-EOF
     #!/bin/bash
+    sudo /usr/local/vpnserver/vpncmd localhost:5555 /SERVER /IN:"${var.path_softether_config}" /OUT:config.log
+    sudo chmod 700 "${var.path_rserver_config}" && sudo chown nobody:nobody "${var.path_rserver_config}"
+    sudo systemctl restart vpnserver
+    sudo systemctl enable rserver.service
+    sudo systemctl start rserver.service
+    sudo systemctl enable awslogsd.service
+    sudo systemctl start awslogsd.service
+    sudo /usr/bin/iptablesload
     sudo sysctl -p
     EOF
   }
