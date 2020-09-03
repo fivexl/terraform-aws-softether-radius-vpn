@@ -28,6 +28,12 @@ override.tf.json
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # example: *tfplan*
 
-packer-manifest.json
+# idea
 /.idea/
-/deployment/terraform/testing.tfvars
+
+# Terraform tfvars
+*.tfvars
+
+# packer
+*variables.json
+*packer-manifest.json

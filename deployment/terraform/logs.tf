@@ -1,7 +1,7 @@
 locals {
-  rserver_log      = format("%s/rserver", var.cloudwatch_loggroup_name)
-  vpn_server_log   = format("%s/vpnserver_server_log", var.cloudwatch_loggroup_name)
-  vpn_security_log = format("%s/vpnserver_security_log", var.cloudwatch_loggroup_name)
+  rserver_log      = format("%s/rserver", var.project_name)
+  vpn_server_log   = format("%s/vpnserver_server_log", var.project_name)
+  vpn_security_log = format("%s/vpnserver_security_log", var.project_name)
 }
 
 resource "aws_cloudwatch_log_group" "rserver" {

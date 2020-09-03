@@ -1,34 +1,33 @@
-data "aws_caller_identity" "i" {}
+data "aws_caller_identity" "this" {}
 
-data "aws_ami" "ami" {
+data "aws_ami" "this" {
   most_recent = true
-  owners      = [data.aws_caller_identity.i.account_id]
-  name_regex  = "softether-radius-vpn*"
+  owners      = [data.aws_caller_identity.this.account_id]
+  name_regex  = "${var.project_name}*"
 }
 
 data "aws_subnet_ids" "public_subnets" {
   vpc_id = var.vpc_id
-  tags   = var.subnet_tags
+  tags   = var.public_subnet_tags
 }
 
-resource "aws_security_group" "vpn_sg" {
-  name   = "vpn_instance_sg"
-  vpc_id = var.vpc_id
-  tags   = var.tags
+resource "aws_security_group" "this" {
+  name        = var.project_name
+  description = "Allow ${var.project_name} IPSEC/L2TP"
+  vpc_id      = var.vpc_id
+  tags        = var.tags
 
   ingress {
-    from_port = 500
-    to_port   = 500
-    protocol  = "udp"
-
+    from_port   = 500
+    to_port     = 500
+    protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port = 4500
-    to_port   = 4500
-    protocol  = "udp"
-
+    from_port   = 4500
+    to_port     = 4500
+    protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -40,27 +39,23 @@ resource "aws_security_group" "vpn_sg" {
   }
 }
 
-resource "tls_private_key" "vpn" {
-  algorithm = "RSA"
-}
-
-resource "aws_key_pair" "vpn" {
-  key_name   = "softether-radius-vpn"
-  public_key = tls_private_key.vpn.public_key_openssh
-}
 
 # Install updates and restart instance
-resource "aws_instance" "vpn" {
-  source_dest_check           = false
-  ami                         = data.aws_ami.ami.id
+resource "aws_instance" "this" {
+  ami                         = data.aws_ami.this.id
   instance_type               = var.instance_type
-  key_name                    = aws_key_pair.vpn.key_name
-  subnet_id                   = sort(data.aws_subnet_ids.public_subnets.ids)[0]
-  vpc_security_group_ids      = [aws_security_group.vpn_sg.id]
+  key_name                    = var.key_pair_name
+  vpc_security_group_ids      = [aws_security_group.this.id]
+  subnet_id                   = sort(data.aws_subnet_ids.public_subnets.ids)[0] #TODO: Random choose subnet
   associate_public_ip_address = true
-  iam_instance_profile        = aws_iam_instance_profile.vpn.name
-  tags                        = merge(map("Name", "vpn"), var.tags)
-  user_data                   = data.template_cloudinit_config.vpn_config.rendered
+  source_dest_check           = false
+  user_data                   = data.template_cloudinit_config.this.rendered
+  iam_instance_profile        = aws_iam_instance_profile.this.name
+  tags                        = merge(map("Name", "ext-vpn"), var.tags)
+  root_block_device {
+    encrypted  = true
+    kms_key_id = var.root_block_kms_key_arn
+  }
 }
 
 resource "random_string" "psk" {
@@ -81,7 +76,12 @@ data "template_file" "softether_config" {
     PSK             = random_string.psk.result
     RADIUS_SECRET   = random_string.radius_secret.result
     SERVER_PASSWORD = random_string.server_password.result
-    PUSH_ROUTE      = var.push_route
+    DHCP_START      = cidrhost(var.vpn_cidr, 10)
+    DHCP_END        = cidrhost(var.vpn_cidr, 200)
+    DHCP_MASK       = cidrnetmask(var.vpn_cidr)
+    DHCP_GW         = cidrhost(var.vpn_cidr, 1)
+    DHCP_DNS        = cidrhost(var.vpn_cidr, 1)
+    PUSH_ROUTE      = join("/", [cidrhost(var.target_cidr, 0), cidrnetmask(var.target_cidr), cidrhost(var.vpn_cidr, 1)])
     FILE_PATH       = var.path_softether_config
   }
 }
@@ -118,10 +118,9 @@ data "template_file" "awslogs_conf" {
   }
 }
 
-# TODO: Enable gzip and base64 (only together)
-data "template_cloudinit_config" "vpn_config" {
-  gzip          = false
-  base64_encode = false
+data "template_cloudinit_config" "this" {
+  gzip          = true
+  base64_encode = true
   # Generate softether_config.template and put it to /usr/local/vpnserver/softether.config
   part {
     content_type = "text/x-shellscript"
@@ -147,7 +146,7 @@ data "template_cloudinit_config" "vpn_config" {
     content_type = "text/x-shellscript"
     content      = <<-EOF
     #!/bin/bash
-    sudo /usr/local/vpnserver/vpncmd localhost:5555 /SERVER /IN:"${var.path_softether_config}" /OUT:config.log
+    sudo /usr/local/vpnserver/vpncmd localhost:"${var.vpn_admin_port}" /SERVER /IN:"${var.path_softether_config}" /OUT:config.log
     sudo chmod 700 "${var.path_rserver_config}" && sudo chown nobody:nobody "${var.path_rserver_config}"
     sudo systemctl restart vpnserver
     sudo systemctl enable rserver.service

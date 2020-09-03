@@ -1,5 +1,9 @@
 output "vpn_dns" {
-  value = aws_route53_record.www.fqdn
+  value = aws_route53_record.this.fqdn
+}
+
+output "vpn_public_ip" {
+  value = aws_instance.this.public_ip
 }
 
 output "vpn_ipsec_psk" {

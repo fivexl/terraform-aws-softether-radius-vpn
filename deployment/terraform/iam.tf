@@ -34,19 +34,19 @@ data "aws_iam_policy_document" "trust" {
   }
 }
 
-resource "aws_iam_role" "vpn" {
-  name               = "softether-radius-vpn"
+resource "aws_iam_role" "this" {
+  name               = var.project_name
   path               = "/"
   assume_role_policy = data.aws_iam_policy_document.trust.json
 }
 
-resource "aws_iam_role_policy" "vpn" {
-  name   = "softether-radius-vpn"
-  role   = aws_iam_role.vpn.id
+resource "aws_iam_role_policy" "this" {
+  name   = var.project_name
+  role   = aws_iam_role.this.id
   policy = data.aws_iam_policy_document.vpn.json
 }
 
-resource "aws_iam_instance_profile" "vpn" {
-  name = "softether-radius-vpn"
-  role = aws_iam_role.vpn.name
+resource "aws_iam_instance_profile" "this" {
+  name = var.project_name
+  role = aws_iam_role.this.name
 }
