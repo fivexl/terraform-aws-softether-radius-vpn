@@ -58,24 +58,39 @@ resource "aws_instance" "this" {
   }
 }
 
-resource "random_string" "psk" {
-  length = 64
+resource "random_password" "psk" {
+  length = 60
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
+  special = true
+  override_special = "_@%"
 }
 
-resource "random_string" "radius_secret" {
-  length = 64
+resource "random_password" "radius_secret" {
+  length = 60
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
+  special = true
+  override_special = "_@%"
 }
 
-resource "random_string" "server_password" {
-  length = 64
+resource "random_password" "server_password" {
+  length = 60
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
+  special = true
+  override_special = "_@%"
 }
 
 data "template_file" "softether_config" {
   template = file("${path.module}/templates/softether.config.tpl.sh")
   vars = {
-    PSK             = random_string.psk.result
-    RADIUS_SECRET   = random_string.radius_secret.result
-    SERVER_PASSWORD = random_string.server_password.result
+    PSK             = random_password.psk.result
+    RADIUS_SECRET   = random_password.radius_secret.result
+    SERVER_PASSWORD = random_password.server_password.result
     DHCP_START      = cidrhost(var.vpn_cidr, 10)
     DHCP_END        = cidrhost(var.vpn_cidr, 200)
     DHCP_MASK       = cidrnetmask(var.vpn_cidr)
@@ -89,7 +104,7 @@ data "template_file" "softether_config" {
 data "template_file" "config_gcfg" {
   template = file("${path.module}/templates/config.gcfg.tpl.sh")
   vars = {
-    RADIUS_SECRET = random_string.radius_secret.result
+    RADIUS_SECRET = random_password.radius_secret.result
     LDAP_ADDR     = var.ldap_addr
     USER_DN       = var.ldap_user_dn
     DUO_ENABLED   = var.duo_enabled
