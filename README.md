@@ -1,6 +1,12 @@
 # softether-radius-vpn
 Softether based VPN with LDAP/MFA auth via RADIUS
 
+# Packer variables
+- aws_profile - AWS_PROFILE for build and store AMI
+- project_name - Name of project for AMI name, AMI and Snapshot tags
+- ami_region - AWS_DEFAULT_REGION where AMI will builds and stored
+- kms_key_id - AWS KMS key for encrypt storage volume
+
 # Input variables
 - vpc_id - ID of your VPC (e.g.: vpc-fb648686123456)
 - dns_zone_name - Zone name for your VPN server

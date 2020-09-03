@@ -1,15 +1,14 @@
 {
   "variables": {
-    "aws_access_key": "",
-    "aws_secret_key": "",
-    "ami_name": "softether-radius-vpn-{{timestamp}}",
-    "ami_region": "{{env `AWS_DEFAULT_REGION`}}"
+    "aws_profile": "",
+    "project_name": "",
+    "ami_region": "",
+    "kms_key_id": ""
   },
   "builders": [
     {
       "type": "amazon-ebs",
-      "access_key": "{{user `aws_access_key`}}",
-      "secret_key": "{{user `aws_secret_key`}}",
+      "profile": "{{ user `aws_profile`}}",
       "region": "{{user `ami_region`}}",
       "source_ami_filter": {
         "filters": {
@@ -20,11 +19,22 @@
         },
         "owners": ["137112412989"],
         "most_recent": true
-     },
+      },
       "instance_type": "t3.micro",
       "ssh_username": "ec2-user",
       "ssh_pty": "true",
-      "ami_name": "{{user `ami_name`}}"
+      "encrypt_boot": "true",
+      "kms_key_id": "{{user `kms_key_id`}}",
+      "ami_name": "{{user `project_name`}}-amazon-linux-2-{{isotime | clean_resource_name}}",
+      "run_tags": {
+        "Name": "builder for {{user `project_name`}}"
+      },
+      "run_volume_tags": {
+        "Name": "builder for {{user `project_name`}}"
+      },
+      "tags": {
+        "Name": "{{user `project_name`}}"
+      }
     }
   ],
   "post-processors": [
