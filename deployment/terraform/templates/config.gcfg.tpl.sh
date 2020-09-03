@@ -7,8 +7,8 @@ Secret="${RADIUS_SECRET}"
 Addr="${LDAP_ADDR}"
 UserDN="${USER_DN}"
 [DUO]
-Enabled="${DUO_ENABLED}"
-IKey="${DUO_IKEY}"
-SKey="${DUO_SKEY}"
-APIHost="${DUO_API_HOST}"
+Enabled=${DUO_ENABLED}
+IKey=${DUO_IKEY}
+SKey=${DUO_SKEY}
+APIHost=${DUO_API_HOST}
 EOL
