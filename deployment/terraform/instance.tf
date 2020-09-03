@@ -103,6 +103,7 @@ data "template_file" "config_gcfg" {
 data "template_file" "iptables_rules" {
   template = file("${path.module}/templates/iptables.rules.tpl.sh")
   vars = {
+    VPN_CIDR    = var.vpn_cidr
     TARGET_CIDR = var.target_cidr
     FILE_PATH   = var.path_iptables_rules
   }
