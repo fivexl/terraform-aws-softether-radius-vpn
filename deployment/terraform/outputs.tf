@@ -13,3 +13,7 @@ output "vpn_ipsec_psk" {
 output "vpn_server_password" {
   value = random_password.server_password.result
 }
+
+output "vpn_push_route" {
+  value = join("/", [cidrhost(var.target_cidr, 0), cidrnetmask(var.target_cidr), cidrhost(var.vpn_cidr, 1)])
+}
