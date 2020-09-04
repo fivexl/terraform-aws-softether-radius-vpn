@@ -35,6 +35,7 @@ variable "create_dns" {
 variable "dns_zone_name" {
   description = "Name of Public DNS zone where record will be"
   type        = string
+  default     = ""
 }
 
 variable "dns_a_record" {
@@ -97,6 +98,7 @@ variable "ebs_encrypt" {
 variable "root_block_kms_key_arn" {
   description = "ARN of the KMS Key to use when encrypting the volume"
   type        = string
+  default     = ""
 }
 
 #################
