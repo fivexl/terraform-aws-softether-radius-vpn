@@ -45,7 +45,7 @@ resource "aws_route53_record" "this" {
   name    = "${var.dns_a_record}.${data.aws_route53_zone.this[0].name}"
   type    = "A"
   ttl     = "300"
-  records = [local.this_instance_public_ip]
+  records = [aws_instance.this.public_ip]
 }
 
 ##################################
@@ -345,11 +345,10 @@ resource "aws_security_group" "this" {
 ##################################
 
 locals {
-  this_instance_public_ip = var.create_logs ? aws_instance.this_with_logs[0].public_ip : aws_instance.this_without_logs[0].public_ip
+  this_instance_user_data = var.create_logs ? data.template_cloudinit_config.this_with_logs[0].rendered : data.template_cloudinit_config.this_without_logs[0].rendered
 }
 
-resource "aws_instance" "this_with_logs" {
-  count                       = var.create_logs ? 1 : 0
+resource "aws_instance" "this" {
   ami                         = data.aws_ami.this.id
   instance_type               = var.instance_type
   key_name                    = var.key_pair_name
@@ -357,25 +356,7 @@ resource "aws_instance" "this_with_logs" {
   subnet_id                   = random_shuffle.subnet.result[0]
   associate_public_ip_address = true
   source_dest_check           = false
-  user_data                   = data.template_cloudinit_config.this_with_logs[0].rendered
-  iam_instance_profile        = aws_iam_instance_profile.this.name
-  tags                        = merge(map("Name", var.name), var.tags)
-  root_block_device {
-    encrypted  = var.ebs_encrypt
-    kms_key_id = var.root_block_kms_key_arn
-  }
-}
-
-resource "aws_instance" "this_without_logs" {
-  count                       = var.create_logs ? 0 : 1
-  ami                         = data.aws_ami.this.id
-  instance_type               = var.instance_type
-  key_name                    = var.key_pair_name
-  vpc_security_group_ids      = [aws_security_group.this.id]
-  subnet_id                   = random_shuffle.subnet.result[0]
-  associate_public_ip_address = true
-  source_dest_check           = false
-  user_data                   = data.template_cloudinit_config.this_without_logs[0].rendered
+  user_data                   = local.this_instance_user_data
   iam_instance_profile        = aws_iam_instance_profile.this.name
   tags                        = merge(map("Name", var.name), var.tags)
   root_block_device {

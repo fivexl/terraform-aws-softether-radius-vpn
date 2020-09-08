@@ -10,7 +10,7 @@ Softether based VPN with LDAP/MFA auth via RADIUS
 - ami_region - AWS_DEFAULT_REGION where AMI will builds and stored
 
 # Terraform TODO
-- not supported: module count>1 
+- not supported: module count>1 Have to use random_string in names and etc
 - not supported: aws_spot_instance_request support
 
 # Terraform variables
@@ -36,6 +36,9 @@ Softether based VPN with LDAP/MFA auth via RADIUS
 - ldap_addr - Your LPAD for Auth (e.g. ldaps://ldap.jumpcloud.com:636)
 - ldap_user_dn - Your USER_DN in LDAP (e.g.: uid={{username}},ou=users,o=****,dc=jumpcloud,dc=com)
 - duo_enabled - DUO support true/false
+- duo_ikey - DUO ikey 
+- duo_skey - DUO skey
+- duo_api_host - DUO API host
 
 # Ubuntu Client Demo setup
 - Add VPN  

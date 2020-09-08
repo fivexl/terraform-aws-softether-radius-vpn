@@ -1,5 +1,7 @@
 {
   "variables": {
+    "aws_access_key": "",
+    "aws_secret_key": "",
     "aws_profile": "",
     "name": "",
     "ami_region": ""
@@ -7,6 +9,8 @@
   "builders": [
     {
       "type": "amazon-ebs",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
       "profile": "{{ user `aws_profile`}}",
       "region": "{{user `ami_region`}}",
       "source_ami_filter": {

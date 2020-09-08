@@ -3,11 +3,10 @@ provider "aws" {
 }
 
 data "aws_kms_key" "aws_ebs" {
-  key_id = "aws/ebs"
+  key_id = "alias/aws/ebs"
 }
 
 module "srvpn" {
-  count              = 1
   source             = "../../"
   name               = "softether-radius-vpn"
   create_logs        = true
@@ -39,21 +38,23 @@ module "srvpn" {
 }
 
 output "this_vpn_dns_fqdn" {
-  value = module.srvpn[0].this_vpn_dns_fqdn
+  value = module.srvpn.this_vpn_dns_fqdn
 }
 
 output "this_vpn_public_ip" {
-  value = module.srvpn[0].this_vpn_public_ip
+  value = module.srvpn.this_vpn_public_ip
 }
 
 output "this_vpn_ipsec_psk" {
-  value = module.srvpn[0].this_vpn_ipsec_psk
+  value     = module.srvpn.this_vpn_ipsec_psk
+  sensitive = true
 }
 
 output "this_vpn_server_password" {
-  value = module.srvpn[0].this_vpn_server_password
+  value     = module.srvpn.this_vpn_server_password
+  sensitive = true
 }
 
 output "this_vpn_push_route" {
-  value = module.srvpn[0].this_vpn_push_route
+  value = module.srvpn.this_vpn_push_route
 }
