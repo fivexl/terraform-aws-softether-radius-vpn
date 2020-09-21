@@ -21,6 +21,8 @@ Softether based VPN with LDAP/MFA auth via RADIUS
 - create_dns - If you need VPN DNS (default: true)
 - dns_zone_name - Name of Public DNS zone where record will be 
 - dns_a_record - Name of A record in DNS zone (default: vpn)
+- create_private_dns_zone - If you need Private DNS zone which will be used as an internal domain (default: false)
+- private_dns_zone_name - Name of Private DNS zone (default: internal)
 - ami_name_prefix - For search AMI (default: softether-radius-vpn) 
 - ami_owner - Owner of AMI for search (default: self)
 - vpc_id - ID of your VPC (e.g.: vpc-fb648686123456)
@@ -50,3 +52,8 @@ Softether based VPN with LDAP/MFA auth via RADIUS
 - Enable IPsec tunnel to L2TP host
 - Pre-shared key: tf ${vpn_ipsec_psk}
 - Add routes. Ubuntu default client doesn't support DHCP Classless Static Routes
+
+# How to Test private DNS zone
+- Connect VPN
+- Add record to private DNS zone
+- Try to resolve: nslookup test-record.private-zone.your-domain.com

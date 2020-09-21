@@ -3,7 +3,7 @@
 #################
 
 variable "name" {
-  description = "The name used for logs group, security groups, iam roles and VPN instance"
+  description = "The name used for logs group, security groups, iam roles, dns zone and VPN instance"
   type        = string
   default     = "softether-radius-vpn"
 }
@@ -42,6 +42,18 @@ variable "dns_a_record" {
   description = "Name of A record in DNS zone"
   type        = string
   default     = "vpn"
+}
+
+variable "create_private_dns_zone" {
+  description = "Create a private dns zone for internal usage. Works only with create_dns = true. Your VPC must have enable_dns_support=true and enable_dns_hostnames=true"
+  type        = bool
+  default     = false
+}
+
+variable "private_dns_zone_name" {
+  description = "Name of Private DNS zone which will be used as an internal domain. Works only with create_dns = true"
+  type        = string
+  default     = "internal"
 }
 
 #################

@@ -30,6 +30,18 @@ resource "aws_cloudwatch_log_group" "vpn_security_log" {
 }
 
 ##################################
+# VPC
+##################################
+
+data "aws_vpc" "this" {
+  id = var.vpc_id
+}
+
+locals {
+  vpc_enable_private_dns = data.aws_vpc.this.enable_dns_support && data.aws_vpc.this.enable_dns_hostnames ? true : false
+}
+
+##################################
 # Route53 Record
 ##################################
 
@@ -46,6 +58,17 @@ resource "aws_route53_record" "this" {
   type    = "A"
   ttl     = "300"
   records = [aws_instance.this.public_ip]
+}
+
+resource "aws_route53_zone" "private" {
+  count         = var.create_dns && var.create_private_dns_zone && local.vpc_enable_private_dns ? 1 : 0
+  name          = "${var.private_dns_zone_name}.${data.aws_route53_zone.this[0].name}"
+  comment       = "Private DNS zone for ${var.name}. Used as is private internal domain"
+  force_destroy = false
+  tags          = merge(map("Name", var.name), var.tags)
+  vpc {
+    vpc_id = data.aws_vpc.this.id
+  }
 }
 
 ##################################
@@ -110,6 +133,7 @@ locals {
   path_rserver_config   = "/usr/local/rserver/config.gcfg"
   path_iptables_rules   = "/etc/iptables.rules"
   path_awslogs_config   = "/etc/awslogs/awslogs.conf"
+  private_domain        = var.create_dns && var.create_private_dns_zone && local.vpc_enable_private_dns ? aws_route53_zone.private[0].name : "none"
 }
 
 resource "random_password" "psk" {
@@ -150,6 +174,7 @@ data "template_file" "softether_config" {
     DHCP_MASK       = cidrnetmask(var.vpn_cidr)
     DHCP_GW         = cidrhost(var.vpn_cidr, 1)
     DHCP_DNS        = cidrhost(var.vpn_cidr, 1)
+    DOMAIN          = local.private_domain
     PUSH_ROUTE      = join("/", [cidrhost(var.target_cidr, 0), cidrnetmask(var.target_cidr), cidrhost(var.vpn_cidr, 1)])
     FILE_PATH       = local.path_softether_config
   }
@@ -303,7 +328,7 @@ data "aws_ami" "this" {
 }
 
 data "aws_subnet_ids" "public_subnets" {
-  vpc_id = var.vpc_id
+  vpc_id = data.aws_vpc.this.id
   tags   = var.public_subnet_tags
 }
 
@@ -315,7 +340,7 @@ resource "random_shuffle" "subnet" {
 resource "aws_security_group" "this" {
   name        = var.name
   description = "Allow ${var.name} IPSEC/L2TP"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.this.id
   tags        = var.tags
 
   ingress {
