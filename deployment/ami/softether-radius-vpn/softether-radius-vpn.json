@@ -4,7 +4,8 @@
     "aws_secret_key": "",
     "aws_profile": "",
     "name": "",
-    "ami_region": ""
+    "ami_region": "",
+    "rserver_version": "v0.0.2"
   },
   "builders": [
     {
@@ -104,9 +105,9 @@
     {
       "type": "shell",
         "inline": [
-          "curl -OL https://releases.fivexl.io/golang-radius-server-ldap-with-mfa/v0.0.1/rserver_v0.0.1_linux_amd64.zip",
-          "unzip rserver_v0.0.1_linux_amd64.zip",
-          "rm -rf rserver_v0.0.1_linux_amd64.zip",
+          "curl -OL https://releases.fivexl.io/golang-radius-server-ldap-with-mfa/{{ user `rserver_version`}}/rserver_{{ user `rserver_version`}}_linux_amd64.zip",
+          "unzip rserver_{{ user `rserver_version`}}_linux_amd64.zip",
+          "rm -rf rserver_{{ user `rserver_version`}}_linux_amd64.zip",
           "sudo mkdir /usr/local/rserver",
           "sudo mv ./rserver /usr/local/rserver/rserver",
           "sudo chmod -R 600 /usr/local/rserver/",
