@@ -44,3 +44,7 @@ output "this_vpn_private_dns_zone_name_servers" {
   description = "Private DNS zone name servers which used as an internal domain"
   value       = local.this_vpn_private_dns_zone_name_servers
 }
+
+output "this_security_group_id" {
+  value = aws_security_group.this.id
+}
