@@ -18,13 +18,11 @@ output "this_vpn_public_ip" {
 output "this_vpn_ipsec_psk" {
   description = "Pre-shared Key for VPN clients"
   value       = random_password.psk.result
-  sensitive   = true
 }
 
 output "this_vpn_server_password" {
   description = "VPN server admin password"
   value       = random_password.server_password.result
-  sensitive   = true
 }
 
 output "this_vpn_push_route" {
