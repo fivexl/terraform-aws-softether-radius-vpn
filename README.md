@@ -14,6 +14,9 @@ Softether based VPN with LDAP/MFA auth via RADIUS
 # Terraform TODO
 - not supported: module count>1 Have to use random_string in names and etc
 - not supported: aws_spot_instance_request support
+- not supported: subnets for VPN clients bigger more than /24
+- not supported: variable for public subnet ids
+- not supported: Elastic IP for VPN instance
 
 # Terraform variables
 - name - The name used for logs, sg, iam (default: softether-radius-vpn)
@@ -24,6 +27,7 @@ Softether based VPN with LDAP/MFA auth via RADIUS
 - dns_zone_name - Name of Public DNS zone where record will be 
 - dns_a_record - Name of A record in DNS zone (default: vpn)
 - create_private_dns_zone - If you need Private DNS zone which will be used as an internal domain (default: false)
+  - enableDnsHostnames and enableDnsSupport must be true: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-dns.html
 - private_dns_zone_name - Name of Private DNS zone (default: internal)
 - ami_name_prefix - For search AMI (default: softether-radius-vpn) 
 - ami_owner - Owner of AMI for search (default: self)

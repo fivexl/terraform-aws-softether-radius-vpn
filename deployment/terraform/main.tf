@@ -37,9 +37,6 @@ data "aws_vpc" "this" {
   id = var.vpc_id
 }
 
-locals {
-  vpc_enable_private_dns = data.aws_vpc.this.enable_dns_support && data.aws_vpc.this.enable_dns_hostnames ? true : false
-}
 
 ##################################
 # Route53 Record
@@ -61,7 +58,7 @@ resource "aws_route53_record" "this" {
 }
 
 resource "aws_route53_zone" "private" {
-  count         = var.create_dns && var.create_private_dns_zone && local.vpc_enable_private_dns ? 1 : 0
+  count         = var.create_dns && var.create_private_dns_zone ? 1 : 0
   name          = "${var.private_dns_zone_name}.${data.aws_route53_zone.this[0].name}"
   comment       = "Private DNS zone for ${var.name}. Used as is private internal domain"
   force_destroy = false
@@ -133,7 +130,7 @@ locals {
   path_rserver_config   = "/usr/local/rserver/config.gcfg"
   path_iptables_rules   = "/etc/iptables.rules"
   path_awslogs_config   = "/etc/awslogs/awslogs.conf"
-  private_domain        = var.create_dns && var.create_private_dns_zone && local.vpc_enable_private_dns ? aws_route53_zone.private[0].name : "none"
+  private_domain        = var.create_dns && var.create_private_dns_zone ? aws_route53_zone.private[0].name : "none"
 }
 
 resource "random_password" "psk" {
@@ -170,7 +167,7 @@ data "template_file" "softether_config" {
     RADIUS_SECRET   = random_password.radius_secret.result
     SERVER_PASSWORD = random_password.server_password.result
     DHCP_START      = cidrhost(var.vpn_cidr, 10)
-    DHCP_END        = cidrhost(var.vpn_cidr, 200)
+    DHCP_END        = cidrhost(var.vpn_cidr, 200) #TODO: subnets bigger more than /24
     DHCP_MASK       = cidrnetmask(var.vpn_cidr)
     DHCP_GW         = cidrhost(var.vpn_cidr, 1)
     DHCP_DNS        = cidrhost(var.vpn_cidr, 1)
@@ -333,7 +330,7 @@ data "aws_subnet_ids" "public_subnets" {
 }
 
 resource "random_shuffle" "subnet" {
-  input        = data.aws_subnet_ids.public_subnets.ids
+  input        = data.aws_subnet_ids.public_subnets.ids #TODO: list of subnet ids
   result_count = 1
 }
 
