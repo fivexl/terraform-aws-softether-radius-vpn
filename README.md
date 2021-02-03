@@ -49,15 +49,19 @@ Softether based VPN with LDAP/MFA auth via RADIUS
 - duo_api_host - DUO API host
 
 # Ubuntu Client Demo setup
-- Add VPN  
-- Layer 2 Tunneling Protocol (L2TP)  
+- `sudo apt install network-manager-l2tp-gnome -y`
+- Settings -> Network -> Add VPN -> Layer 2 Tunneling Protocol (L2TP)  
 - gateway: tf ${vpn_dns}
 - User Auth
   - User Name: user in LDAP (e: realuser)
   - Password: pass in LDAP
 - Enable IPsec tunnel to L2TP host
 - Pre-shared key: tf ${vpn_ipsec_psk}
+- Phase 1 algos: aes256-sha1-modp2048,aes128-sha1-modp2048
+- Phase 2 algos: aes256-sha1,aes128-sha1
 - Add routes. Ubuntu default client doesn't support DHCP Classless Static Routes
+
+Guide with pictures [here](https://help.vpntunnel.com/support/solutions/articles/5000782608-vpntunnel-l2tp-installation-guide-for-ubuntu-18-04-) 
 
 # How to Test private DNS zone
 - Connect VPN
