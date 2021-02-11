@@ -49,6 +49,7 @@ resource "aws_iam_role" "this" {
   name               = var.name
   path               = "/"
   assume_role_policy = data.aws_iam_policy_document.trust.json
+  tags               = var.tags
 }
 
 data "aws_iam_policy_document" "logs" {
@@ -270,8 +271,6 @@ resource "aws_security_group" "this" {
   name        = var.name
   description = "Allow ${var.name} IPSEC/L2TP"
   vpc_id      = var.vpc_id
-  tags        = var.tags
-
   ingress {
     description = "Allow Ingreess 500 UDP for ${var.name}"
     from_port   = 500
@@ -293,6 +292,7 @@ resource "aws_security_group" "this" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  tags = var.tags
 }
 
 resource "aws_network_interface" "this" {
@@ -300,12 +300,14 @@ resource "aws_network_interface" "this" {
   security_groups   = [aws_security_group.this.id]
   subnet_id         = element(var.subnets, count.index)
   source_dest_check = false
+  tags              = var.tags
 }
 
 resource "aws_eip" "this" {
   count             = length(var.subnets)
   vpc               = true
   network_interface = element(aws_network_interface.this.*.id, count.index)
+  tags              = var.tags
 }
 
 ##################################
@@ -333,21 +335,13 @@ resource "aws_route53_record" "this" {
 
 resource "aws_launch_template" "this" {
   count                  = length(var.subnets)
-  name_prefix            = var.name
-  description            = "vpn-lt-${var.name}"
+  name_prefix            = format("vpn-%s-", element(var.azs, count.index))
+  description            = format("vpn-%s-%s-${var.name}", element(var.azs, count.index), element(var.subnets, count.index))
   update_default_version = true
   image_id               = data.aws_ami.this.image_id
   instance_type          = var.instance_type
   user_data              = data.template_cloudinit_config.this.rendered
   key_name               = var.key_pair_name
-  tag_specifications {
-    resource_type = "instance"
-    tags          = { "Name" : var.name }
-  }
-  tag_specifications {
-    resource_type = "volume"
-    tags          = { "Name" : var.name }
-  }
   network_interfaces {
     network_interface_id = element(aws_network_interface.this.*.id, count.index)
   }
@@ -361,6 +355,14 @@ resource "aws_launch_template" "this" {
   }
   monitoring {
     enabled = var.enable_detailed_monitoring
+  }
+  tag_specifications {
+    resource_type = "instance"
+    tags          = { "Name" : var.name }
+  }
+  tag_specifications {
+    resource_type = "volume"
+    tags          = { "Name" : var.name }
   }
   tags = var.tags
 }
@@ -377,15 +379,17 @@ module "ec2_spot_price" {
 }
 
 resource "aws_autoscaling_group" "this" {
-  count              = length(var.subnets)
-  name_prefix        = format("vpn-%s-", count.index)
-  desired_capacity   = 1
-  max_size           = 1
-  min_size           = 1
-  availability_zones = [element(var.azs, count.index)]
-  health_check_type  = "EC2"
-  enabled_metrics    = ["GroupInServiceInstances"]
-  capacity_rebalance = true
+  count                     = length(var.subnets)
+  name_prefix               = format("vpn-%s-", element(var.azs, count.index))
+  desired_capacity          = 1
+  max_size                  = 1
+  min_size                  = 1
+  availability_zones        = [element(var.azs, count.index)]
+  health_check_type         = "EC2"
+  health_check_grace_period = 120
+  default_cooldown          = 120
+  enabled_metrics           = ["GroupInServiceInstances"]
+  capacity_rebalance        = true
   mixed_instances_policy {
     launch_template {
       launch_template_specification {
@@ -410,4 +414,5 @@ resource "aws_autoscaling_group" "this" {
       min_healthy_percentage = 90
     }
   }
+  tags = var.asg_tags
 }

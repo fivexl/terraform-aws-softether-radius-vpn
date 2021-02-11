@@ -14,6 +14,11 @@ variable "tags" {
   default     = {}
 }
 
+variable "asg_tags" {
+  description = "A list of ASG tags"
+  default     = []
+}
+
 variable "create_logs" {
   description = "Create a group log in CloudWatch"
   type        = bool
