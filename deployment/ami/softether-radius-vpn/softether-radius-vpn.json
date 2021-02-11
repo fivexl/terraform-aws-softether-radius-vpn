@@ -1,11 +1,13 @@
 {
   "variables": {
-    "aws_access_key": "",
-    "aws_secret_key": "",
-    "aws_profile": "",
-    "name": "",
-    "ami_region": "",
-    "rserver_version": "v0.0.2"
+    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+    "aws_profile": "{{env `AWS_PROFILE`}}",
+    "name": "softether-radius-vpn",
+    "ami_region": "{{env `AWS_DEFAULT_REGION`}}",
+    "rserver_version": "v0.0.2",
+    "softether_vpnserver_version": "v4.34-9745-beta",
+    "softether_vpnserver_release_date": "2020.04.05"
   },
   "builders": [
     {
@@ -35,7 +37,9 @@
         "Name": "builder for {{user `name`}}"
       },
       "tags": {
-        "Name": "{{user `name`}}"
+        "Name": "{{user `name`}}",
+        "rserver_ver" : "{{ user `rserver_version` }}",
+        "softether_vpn_ver" : "{{ user `softether_vpnserver_version` }}"
       }
     }
   ],
@@ -86,8 +90,9 @@
     {
       "type": "shell",
       "inline": [
-        "curl -OL https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/v4.34-9745-beta/softether-vpnserver-v4.34-9745-beta-2020.04.05-linux-x64-64bit.tar.gz",
-        "tar xvf softether-vpnserver-v4.34-9745-beta-2020.04.05-linux-x64-64bit.tar.gz && rm -rf softether-vpnserver-v4.34-9745-beta-2020.04.05-linux-x64-64bit.tar.gz",
+        "curl -OL https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/{{ user `softether_vpnserver_version` }}/softether-vpnserver-{{ user `softether_vpnserver_version` }}-{{ user `softether_vpnserver_release_date` }}-linux-x64-64bit.tar.gz",
+        "tar xvf softether-vpnserver-{{ user `softether_vpnserver_version` }}-{{ user `softether_vpnserver_release_date` }}-linux-x64-64bit.tar.gz",
+        "rm -rf softether-vpnserver-{{ user `softether_vpnserver_version` }}-{{ user `softether_vpnserver_release_date` }}-linux-x64-64bit.tar.gz",
         "sudo mv vpnserver /usr/local",
         "echo Use development tools to build VPN",
         "sudo yum groupinstall \"Development Tools\" -y",
