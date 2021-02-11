@@ -29,7 +29,7 @@ variable "log_retention_days" {
 variable "create_dns" {
   description = "Create a dns record in Route53"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "dns_zone_name" {
@@ -38,22 +38,16 @@ variable "dns_zone_name" {
   default     = ""
 }
 
-variable "dns_a_record" {
-  description = "Name of A record in DNS zone"
+variable "dns_a_record_prefix" {
+  description = "Prefix for A record in DNS zone"
   type        = string
-  default     = "vpn"
+  default     = "vpn-"
 }
 
-variable "create_private_dns_zone" {
-  description = "Create a private dns zone for internal usage. Works only with create_dns = true. Your VPC must have enable_dns_support=true and enable_dns_hostnames=true"
-  type        = bool
-  default     = false
-}
-
-variable "private_dns_zone_name" {
-  description = "Name of Private DNS zone which will be used as an internal domain. Works only with create_dns = true"
+variable "private_domain_fqdn" {
+  description = "Domain FQDN which will be used to resolve internal names. (e.g.: internal.example.com)"
   type        = string
-  default     = "internal"
+  default     = ""
 }
 
 #################
@@ -77,10 +71,9 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "public_subnet_tags" {
-  description = "Tags for search your public subnet"
-  type        = map(string)
-  default     = { "Type" : "Public" }
+variable "subnets" {
+  description = "Subnets for VPN servers"
+  type        = list(string)
 }
 
 variable "instance_type" {
@@ -101,16 +94,16 @@ variable "key_pair_name" {
   default     = ""
 }
 
-variable "ebs_encrypt" {
-  description = "Do you need encrypt EBS storage for for VPC instance"
+variable "enable_detailed_monitoring" {
+  description = "If `true`, the launched EC2 instance will have detailed monitoring enabled."
   type        = bool
-  default     = true
+  default     = false
 }
 
-variable "root_block_kms_key_arn" {
-  description = "ARN of the KMS Key to use when encrypting the volume"
-  type        = string
-  default     = ""
+variable "enable_spot_instance" {
+  description = "Use spot instance for all VPN instances"
+  type        = bool
+  default     = true
 }
 
 #################
@@ -123,9 +116,21 @@ variable "target_cidr" {
 }
 
 variable "vpn_cidr" {
-  description = "VPN CIDR. .1 - GW, .10-.200 Users IPs"
+  description = "VPN CIDR. .1 - GW"
   type        = string
   default     = "172.16.0.0/24"
+}
+
+variable "vpn_dhcp_start" {
+  description = "VPN DHCP start cidrhost() hostnum"
+  type        = number
+  default     = 10
+}
+
+variable "vpn_dhcp_end" {
+  description = "VPN DHCP end cidrhost() hostnum"
+  type        = number
+  default     = 200
 }
 
 variable "vpn_admin_port" {

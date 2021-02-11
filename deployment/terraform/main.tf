@@ -30,45 +30,6 @@ resource "aws_cloudwatch_log_group" "vpn_security_log" {
 }
 
 ##################################
-# VPC
-##################################
-
-data "aws_vpc" "this" {
-  id = var.vpc_id
-}
-
-
-##################################
-# Route53 Record
-##################################
-
-data "aws_route53_zone" "this" {
-  count        = var.create_dns ? 1 : 0
-  name         = var.dns_zone_name
-  private_zone = false
-}
-
-resource "aws_route53_record" "this" {
-  count   = var.create_dns ? 1 : 0
-  zone_id = data.aws_route53_zone.this[0].zone_id
-  name    = "${var.dns_a_record}.${data.aws_route53_zone.this[0].name}"
-  type    = "A"
-  ttl     = "300"
-  records = [aws_instance.this.public_ip]
-}
-
-resource "aws_route53_zone" "private" {
-  count         = var.create_dns && var.create_private_dns_zone ? 1 : 0
-  name          = "${var.private_dns_zone_name}.${data.aws_route53_zone.this[0].name}"
-  comment       = "Private DNS zone for ${var.name}. Used as is private internal domain"
-  force_destroy = false
-  tags          = merge(map("Name", var.name), var.tags)
-  vpc {
-    vpc_id = data.aws_vpc.this.id
-  }
-}
-
-##################################
 # IAM
 ##################################
 
@@ -98,7 +59,6 @@ data "aws_iam_policy_document" "trust" {
       type        = "Service"
       identifiers = ["ec2.amazonaws.com"]
     }
-
     actions = ["sts:AssumeRole"]
   }
 }
@@ -109,11 +69,15 @@ resource "aws_iam_role" "this" {
   assume_role_policy = data.aws_iam_policy_document.trust.json
 }
 
-resource "aws_iam_role_policy" "logs" {
+resource "aws_iam_policy" "logs" {
   count  = var.create_logs ? 1 : 0
-  name   = var.name
-  role   = aws_iam_role.this.id
   policy = data.aws_iam_policy_document.logs[0].json
+}
+
+resource "aws_iam_role_policy_attachment" "logs" {
+  count      = var.create_logs ? 1 : 0
+  policy_arn = aws_iam_policy.logs[0].arn
+  role       = aws_iam_role.this.name
 }
 
 resource "aws_iam_instance_profile" "this" {
@@ -130,7 +94,6 @@ locals {
   path_rserver_config   = "/usr/local/rserver/config.gcfg"
   path_iptables_rules   = "/etc/iptables.rules"
   path_awslogs_config   = "/etc/awslogs/awslogs.conf"
-  private_domain        = var.create_dns && var.create_private_dns_zone ? aws_route53_zone.private[0].name : "none"
 }
 
 resource "random_password" "psk" {
@@ -139,7 +102,7 @@ resource "random_password" "psk" {
   min_upper        = 1
   min_numeric      = 1
   special          = true
-  override_special = "_@%"
+  override_special = "_@!"
 }
 
 resource "random_password" "radius_secret" {
@@ -148,7 +111,7 @@ resource "random_password" "radius_secret" {
   min_upper        = 1
   min_numeric      = 1
   special          = true
-  override_special = "_@%"
+  override_special = "_@!"
 }
 
 resource "random_password" "server_password" {
@@ -157,7 +120,7 @@ resource "random_password" "server_password" {
   min_upper        = 1
   min_numeric      = 1
   special          = true
-  override_special = "_@%"
+  override_special = "_@!"
 }
 
 data "template_file" "softether_config" {
@@ -166,12 +129,12 @@ data "template_file" "softether_config" {
     PSK             = random_password.psk.result
     RADIUS_SECRET   = random_password.radius_secret.result
     SERVER_PASSWORD = random_password.server_password.result
-    DHCP_START      = cidrhost(var.vpn_cidr, 10)
-    DHCP_END        = cidrhost(var.vpn_cidr, 200) #TODO: subnets bigger more than /24
+    DHCP_START      = cidrhost(var.vpn_cidr, var.vpn_dhcp_start)
+    DHCP_END        = cidrhost(var.vpn_cidr, var.vpn_dhcp_end)
     DHCP_MASK       = cidrnetmask(var.vpn_cidr)
     DHCP_GW         = cidrhost(var.vpn_cidr, 1)
     DHCP_DNS        = cidrhost(var.vpn_cidr, 1)
-    DOMAIN          = local.private_domain
+    DOMAIN          = var.private_domain_fqdn != "" ? var.private_domain_fqdn : "none"
     PUSH_ROUTE      = join("/", [cidrhost(var.target_cidr, 0), cidrnetmask(var.target_cidr), cidrhost(var.vpn_cidr, 1)])
     FILE_PATH       = local.path_softether_config
   }
@@ -201,18 +164,16 @@ data "template_file" "iptables_rules" {
 }
 
 data "template_file" "awslogs_conf" {
-  count    = var.create_logs ? 1 : 0
   template = file("${path.module}/templates/awslogs.conf.tpl.sh")
   vars = {
     RSERVER_LOG      = local.rserver_log
     VPN_SERVER_LOG   = local.vpn_server_log
     VPN_SECURITY_LOG = local.vpn_security_log
-    FILE_PATH        = local.path_awslogs_config
+    FILE_PATH        = var.create_logs ? local.path_awslogs_config : "/dev/null"
   }
 }
 
-data "template_cloudinit_config" "this_with_logs" {
-  count         = var.create_logs ? 1 : 0
+data "template_cloudinit_config" "this" {
   gzip          = true
   base64_encode = true
   # Generate softether_config.template and put it to /usr/local/vpnserver/softether.config
@@ -228,56 +189,7 @@ data "template_cloudinit_config" "this_with_logs" {
   # Generate awslogs.conf.template and put it to /etc/awslogs/awslogs.conf
   part {
     content_type = "text/x-shellscript"
-    content      = data.template_file.awslogs_conf[0].rendered
-  }
-  # Render template iptables.rules.template into /etc/iptables.rules and
-  part {
-    content_type = "text/x-shellscript"
-    content      = data.template_file.iptables_rules.rendered
-  }
-  # Post config
-  part {
-    content_type = "text/x-shellscript"
-    content      = <<-EOF
-    #!/bin/bash
-    sudo /usr/local/vpnserver/vpncmd localhost:"${var.vpn_admin_port}" /SERVER /IN:"${local.path_softether_config}" /OUT:config.log
-    sudo chmod 700 "${local.path_rserver_config}" && sudo chown nobody:nobody "${local.path_rserver_config}"
-    sudo systemctl restart vpnserver
-    sudo systemctl enable rserver.service
-    sudo systemctl start rserver.service
-    sudo systemctl enable awslogsd.service
-    sudo systemctl start awslogsd.service
-    sudo /usr/bin/iptablesload
-    sudo sysctl -p
-    EOF
-  }
-  # Those are useful when VPN is not working for some reason
-  # (you can check those logs if you go EC2 -> select instance -> Actions -> Instance Settings -> Get System Log)
-  part {
-    content_type = "text/x-shellscript"
-    content      = <<-EOF
-    #!/bin/bash
-    sudo systemctl status rserver.service
-    sudo systemctl status vpnserver
-    sudo journalctl -eu rserver --no-pager --lines 25
-    sudo journalctl -eu vpnserver --no-pager --lines 25
-    EOF
-  }
-}
-
-data "template_cloudinit_config" "this_without_logs" {
-  count         = var.create_logs ? 0 : 1
-  gzip          = true
-  base64_encode = true
-  # Generate softether_config.template and put it to /usr/local/vpnserver/softether.config
-  part {
-    content_type = "text/x-shellscript"
-    content      = data.template_file.softether_config.rendered
-  }
-  # Generate config.gcfg.template and put it to /usr/local/rserver
-  part {
-    content_type = "text/x-shellscript"
-    content      = data.template_file.config_gcfg.rendered
+    content      = data.template_file.awslogs_conf.rendered
   }
   # Render template iptables.rules.template into /etc/iptables.rules and
   part {
@@ -315,46 +227,44 @@ data "template_cloudinit_config" "this_without_logs" {
 }
 
 ##################################
-# Instance info
+# VPN Instances
 ##################################
 
 data "aws_ami" "this" {
   most_recent = true
   owners      = [var.ami_owner]
-  name_regex  = "${var.ami_name_prefix}*"
+  filter {
+    name   = "name"
+    values = ["${var.ami_name_prefix}*"]
+  }
 }
 
-data "aws_subnet_ids" "public_subnets" {
-  vpc_id = data.aws_vpc.this.id
-  tags   = var.public_subnet_tags
-}
-
-resource "random_shuffle" "subnet" {
-  input        = data.aws_subnet_ids.public_subnets.ids #TODO: list of subnet ids
-  result_count = 1
+resource "aws_ebs_encryption_by_default" "this" {
+  enabled = true
 }
 
 resource "aws_security_group" "this" {
   name        = var.name
   description = "Allow ${var.name} IPSEC/L2TP"
-  vpc_id      = data.aws_vpc.this.id
+  vpc_id      = var.vpc_id
   tags        = var.tags
 
   ingress {
+    description = "Allow Ingreess 500 UDP for ${var.name}"
     from_port   = 500
     to_port     = 500
     protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   ingress {
+    description = "Allow Ingreess 4500 UDP for ${var.name}"
     from_port   = 4500
     to_port     = 4500
     protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   egress {
+    description = "Allow Egress for ${var.name}"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -362,27 +272,120 @@ resource "aws_security_group" "this" {
   }
 }
 
-##################################
-# VPN Instance
-##################################
-
-locals {
-  this_instance_user_data = var.create_logs ? data.template_cloudinit_config.this_with_logs[0].rendered : data.template_cloudinit_config.this_without_logs[0].rendered
+resource "aws_network_interface" "this" {
+  count             = length(var.subnets)
+  security_groups   = [aws_security_group.this.id]
+  subnet_id         = element(var.subnets, count.index)
+  source_dest_check = false
 }
 
-resource "aws_instance" "this" {
-  ami                         = data.aws_ami.this.id
-  instance_type               = var.instance_type
-  key_name                    = var.key_pair_name
-  vpc_security_group_ids      = [aws_security_group.this.id]
-  subnet_id                   = random_shuffle.subnet.result[0]
-  associate_public_ip_address = true
-  source_dest_check           = false
-  user_data                   = local.this_instance_user_data
-  iam_instance_profile        = aws_iam_instance_profile.this.name
-  tags                        = merge(map("Name", var.name), var.tags)
-  root_block_device {
-    encrypted  = var.ebs_encrypt
-    kms_key_id = var.root_block_kms_key_arn
+resource "aws_eip" "this" {
+  count             = length(var.subnets)
+  vpc               = true
+  network_interface = element(aws_network_interface.this.*.id, count.index)
+}
+
+##################################
+# Route53 Record
+##################################
+
+data "aws_route53_zone" "this" {
+  count        = var.create_dns ? 1 : 0
+  name         = var.dns_zone_name
+  private_zone = false
+}
+
+resource "aws_route53_record" "this" {
+  count   = var.create_dns ? length(var.subnets) : 0
+  zone_id = data.aws_route53_zone.this[0].zone_id
+  name    = format("${var.dns_a_record_prefix}%s.${data.aws_route53_zone.this[0].name}", count.index)
+  type    = "A"
+  ttl     = "300"
+  records = [element(aws_eip.this.*.public_ip, count.index)]
+}
+
+##################################
+# LT and ASG
+##################################
+
+resource "aws_launch_template" "this" {
+  count                  = length(var.subnets)
+  name_prefix            = var.name
+  description            = "vpn-lt-${var.name}"
+  update_default_version = true
+  image_id               = data.aws_ami.this.image_id
+  instance_type          = var.instance_type
+  user_data              = data.template_cloudinit_config.this.rendered
+  key_name               = var.key_pair_name
+  tag_specifications {
+    resource_type = "instance"
+    tags          = { "Name" : var.name }
+  }
+  tag_specifications {
+    resource_type = "volume"
+    tags          = { "Name" : var.name }
+  }
+  network_interfaces {
+    delete_on_termination = false
+    network_interface_id  = element(aws_network_interface.this.*.id, count.index)
+  }
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.this.arn
+  }
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+  monitoring {
+    enabled = var.enable_detailed_monitoring
+  }
+  tags = var.tags
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+module "ec2_spot_price" {
+  source                        = "fivexl/ec2-spot-price/aws"
+  version                       = "1.0.3"
+  instance_type                 = var.instance_type
+  availability_zones_names_list = data.aws_availability_zones.available.names
+}
+
+resource "aws_autoscaling_group" "this" {
+  count               = length(var.subnets)
+  name_prefix         = format("vpn-%s-", count.index)
+  desired_capacity    = 1
+  max_size            = 1
+  min_size            = 1
+  vpc_zone_identifier = [element(var.subnets, count.index)]
+  health_check_type   = "EC2"
+  enabled_metrics     = ["GroupInServiceInstances"]
+  capacity_rebalance  = true
+  mixed_instances_policy {
+    launch_template {
+      launch_template_specification {
+        launch_template_id = element(aws_launch_template.this.*.id, count.index)
+        version            = element(aws_launch_template.this.*.latest_version, count.index)
+      }
+      override {
+        instance_type = var.instance_type
+      }
+    }
+    instances_distribution {
+      on_demand_base_capacity                  = var.enable_spot_instance ? 0 : 1 # how many on-demand
+      on_demand_percentage_above_base_capacity = 0
+      spot_allocation_strategy                 = "capacity-optimized"
+      spot_max_price                           = module.ec2_spot_price.spot_price_over
+    }
+  }
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      instance_warmup        = 300
+      min_healthy_percentage = 90
+    }
   }
 }
