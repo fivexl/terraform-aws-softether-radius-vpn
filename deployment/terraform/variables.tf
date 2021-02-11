@@ -76,6 +76,11 @@ variable "subnets" {
   type        = list(string)
 }
 
+variable "azs" {
+  description = "List of AZs where subnets places"
+  type        = list(string)
+}
+
 variable "instance_type" {
   description = "Type of EC2 instance. We recommend to use t3a.micro"
   type        = string

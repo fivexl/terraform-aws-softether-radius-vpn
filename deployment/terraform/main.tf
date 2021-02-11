@@ -80,6 +80,12 @@ resource "aws_iam_role_policy_attachment" "logs" {
   role       = aws_iam_role.this.name
 }
 
+resource "aws_iam_role_policy_attachment" "ssm" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.this.name
+}
+
+
 resource "aws_iam_instance_profile" "this" {
   name = var.name
   role = aws_iam_role.this.name
@@ -326,8 +332,7 @@ resource "aws_launch_template" "this" {
     tags          = { "Name" : var.name }
   }
   network_interfaces {
-    delete_on_termination = false
-    network_interface_id  = element(aws_network_interface.this.*.id, count.index)
+    network_interface_id = element(aws_network_interface.this.*.id, count.index)
   }
   iam_instance_profile {
     arn = aws_iam_instance_profile.this.arn
@@ -355,15 +360,15 @@ module "ec2_spot_price" {
 }
 
 resource "aws_autoscaling_group" "this" {
-  count               = length(var.subnets)
-  name_prefix         = format("vpn-%s-", count.index)
-  desired_capacity    = 1
-  max_size            = 1
-  min_size            = 1
-  vpc_zone_identifier = [element(var.subnets, count.index)]
-  health_check_type   = "EC2"
-  enabled_metrics     = ["GroupInServiceInstances"]
-  capacity_rebalance  = true
+  count              = length(var.subnets)
+  name_prefix        = format("vpn-%s-", count.index)
+  desired_capacity   = 1
+  max_size           = 1
+  min_size           = 1
+  availability_zones = [element(var.azs, count.index)]
+  health_check_type  = "EC2"
+  enabled_metrics    = ["GroupInServiceInstances"]
+  capacity_rebalance = true
   mixed_instances_policy {
     launch_template {
       launch_template_specification {
