@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 ##################################
 # CloudWatch Logs
 ##################################
@@ -33,6 +35,22 @@ resource "aws_cloudwatch_log_group" "vpn_security_log" {
 # IAM
 ##################################
 
+data "aws_iam_policy_document" "trust" {
+  statement {
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "this" {
+  name               = var.name
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.trust.json
+}
+
 data "aws_iam_policy_document" "logs" {
   count = var.create_logs ? 1 : 0
   statement {
@@ -53,24 +71,9 @@ data "aws_iam_policy_document" "logs" {
   }
 }
 
-data "aws_iam_policy_document" "trust" {
-  statement {
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-resource "aws_iam_role" "this" {
-  name               = var.name
-  path               = "/"
-  assume_role_policy = data.aws_iam_policy_document.trust.json
-}
-
 resource "aws_iam_policy" "logs" {
   count  = var.create_logs ? 1 : 0
+  name   = var.name
   policy = data.aws_iam_policy_document.logs[0].json
 }
 
@@ -100,6 +103,7 @@ locals {
   path_rserver_config   = "/usr/local/rserver/config.gcfg"
   path_iptables_rules   = "/etc/iptables.rules"
   path_awslogs_config   = "/etc/awslogs/awslogs.conf"
+  path_awscli_config    = "/etc/awslogs/awscli.conf"
 }
 
 resource "random_password" "psk" {
@@ -179,6 +183,14 @@ data "template_file" "awslogs_conf" {
   }
 }
 
+data "template_file" "awscli_conf" {
+  template = file("${path.module}/templates/awscli.conf.tpl.sh")
+  vars = {
+    REGION    = data.aws_region.current.name
+    FILE_PATH = var.create_logs ? local.path_awscli_config : "/dev/null"
+  }
+}
+
 data "template_cloudinit_config" "this" {
   gzip          = true
   base64_encode = true
@@ -196,6 +208,11 @@ data "template_cloudinit_config" "this" {
   part {
     content_type = "text/x-shellscript"
     content      = data.template_file.awslogs_conf.rendered
+  }
+  # Generate awscli.conf.template and put it to /etc/awslogs/awscli.conf
+  part {
+    content_type = "text/x-shellscript"
+    content      = data.template_file.awscli_conf.rendered
   }
   # Render template iptables.rules.template into /etc/iptables.rules and
   part {
