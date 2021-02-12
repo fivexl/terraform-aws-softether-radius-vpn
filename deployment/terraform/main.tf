@@ -85,6 +85,7 @@ resource "aws_iam_role_policy_attachment" "logs" {
 }
 
 resource "aws_iam_role_policy_attachment" "ssm" {
+  count      = var.enable_session_manager_connect ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   role       = aws_iam_role.this.name
 }

@@ -122,6 +122,12 @@ variable "enable_spot_instance" {
   default     = true
 }
 
+variable "enable_session_manager_connect" {
+  description = "Use Session Manager to connect to EC2 instance"
+  type        = bool
+  default     = true
+}
+
 #################
 # VPN variables
 #################
