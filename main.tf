@@ -277,21 +277,21 @@ resource "aws_security_group" "this" {
     from_port   = 500
     to_port     = 500
     protocol    = "udp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS008
   }
   ingress {
     description = "Allow Ingreess 4500 UDP for ${var.name}"
     from_port   = 4500
     to_port     = 4500
     protocol    = "udp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS008
   }
   egress {
     description = "Allow Egress for ${var.name}"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS009
   }
   tags = var.tags
 }
