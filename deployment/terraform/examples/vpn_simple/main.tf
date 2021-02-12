@@ -51,9 +51,9 @@ module "srvpn" {
   asg_tags        = module.tag-generator.result_asg_list
 }
 
-output "srvpn_vpn_public_ip" {
-  description = "The Public IP of created VPN instance"
-  value       = module.srvpn.this_vpn_public_ip
+output "srvpn_vpn_public_ip_list" {
+  description = "The Public IPs of created VPN instance"
+  value       = module.srvpn.this_vpn_public_ip_list
 }
 
 output "srvpn_vpn_ipsec_psk" {

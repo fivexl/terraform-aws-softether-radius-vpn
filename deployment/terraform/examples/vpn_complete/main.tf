@@ -68,13 +68,13 @@ module "srvpn" {
 }
 
 output "srvpn_vpn_dns_fqdn_list" {
-  description = "DNS names of created VPN instance"
+  description = "DNS FQDN names of created VPN instance"
   value       = module.srvpn.this_vpn_dns_fqdn_list
 }
 
-output "srvpn_vpn_public_ip" {
-  description = "The Public IP of created VPN instance"
-  value       = module.srvpn.this_vpn_public_ip
+output "srvpn_vpn_public_ip_list" {
+  description = "The Public IPs of created VPN instance"
+  value       = module.srvpn.this_vpn_public_ip_list
 }
 
 output "srvpn_vpn_ipsec_psk" {
