@@ -38,7 +38,7 @@ variable "create_dns" {
 }
 
 variable "dns_zone_name" {
-  description = "Name of Public DNS zone where record will be"
+  description = "Name of Public DNS zone where record will be. DNS zone must exist."
   type        = string
   default     = ""
 }
@@ -47,6 +47,12 @@ variable "dns_a_record_prefix" {
   description = "Prefix for A record in DNS zone"
   type        = string
   default     = "vpn-"
+}
+
+variable "enable_azs_in_dns_a_record" {
+  description = "Enable AZs in dns A record for VPN or use numbers (from 0)."
+  type        = bool
+  default     = false
 }
 
 variable "private_domain_fqdn" {

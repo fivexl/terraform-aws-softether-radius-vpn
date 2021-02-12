@@ -324,7 +324,7 @@ data "aws_route53_zone" "this" {
 resource "aws_route53_record" "this" {
   count   = var.create_dns ? length(var.subnets) : 0
   zone_id = data.aws_route53_zone.this[0].zone_id
-  name    = format("${var.dns_a_record_prefix}%s.${data.aws_route53_zone.this[0].name}", count.index)
+  name    = format("${var.dns_a_record_prefix}%s.${data.aws_route53_zone.this[0].name}", var.enable_azs_in_dns_a_record ? element(var.azs, count.index) : count.index)
   type    = "A"
   ttl     = "300"
   records = [element(aws_eip.this.*.public_ip, count.index)]
