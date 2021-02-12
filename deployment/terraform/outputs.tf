@@ -34,5 +34,6 @@ output "this_vpn_push_route" {
 }
 
 output "this_security_group_id" {
+  description = "Security Group ID attached to VPN"
   value = aws_security_group.this.id
 }
