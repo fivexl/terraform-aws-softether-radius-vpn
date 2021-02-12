@@ -1,6 +1,6 @@
 locals {
   this_vpn_dns_fqdn_list  = var.create_dns ? aws_route53_record.this.*.fqdn : [""]
-  this_vpn_dns_names_list = var.enable_azs_in_dns_a_record ? [for az in var.azs : format("${var.dns_a_record_prefix}%s", az)] : [for number in length(var.azs) : format("${var.dns_a_record_prefix}%s", number)]
+  this_vpn_dns_names_list = var.enable_azs_in_dns_a_record ? [for az in var.azs : format("${var.dns_a_record_prefix}%s", az)] : [for number in range(length(var.azs)) : format("${var.dns_a_record_prefix}%s", number)]
 }
 
 output "this_vpn_dns_fqdn_list" {
