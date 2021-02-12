@@ -34,6 +34,8 @@ module "vpc" {
   default_security_group_ingress = []
   default_security_group_egress  = []
   tags                           = module.tag-generator.result
+  enable_dns_hostnames           = true
+  enable_dns_support             = true
 }
 
 module "srvpn" {
