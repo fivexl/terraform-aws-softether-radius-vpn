@@ -1,5 +1,6 @@
 locals {
-  this_vpn_dns_fqdn_list = var.create_dns ? aws_route53_record.this.*.fqdn : [""]
+  this_vpn_dns_fqdn_list  = var.create_dns ? aws_route53_record.this.*.fqdn : [""]
+  this_vpn_dns_names_list = var.enable_azs_in_dns_a_record ? [for az in var.azs : format("${var.dns_a_record_prefix}%s", az)] : [for number in length(var.azs) : format("${var.dns_a_record_prefix}%s", number)]
 }
 
 output "this_vpn_dns_fqdn_list" {
@@ -7,8 +8,13 @@ output "this_vpn_dns_fqdn_list" {
   value       = local.this_vpn_dns_fqdn_list
 }
 
-output "this_vpn_public_ip" {
-  description = "The Public IP of created VPN instance"
+output "this_vpn_dns_names_list" {
+  description = "List of DNS names for created VPN instances. Useful if DNS zone in separate account."
+  value       = local.this_vpn_dns_names_list
+}
+
+output "this_vpn_public_ip_list" {
+  description = "The Public IPs of created VPN instance"
   value       = aws_eip.this.*.public_ip
 }
 
