@@ -37,3 +37,6 @@ override.tf.json
 # packer
 *variables.json
 *packer-manifest.json
+
+# Terraform HCL lock
+**.terraform.lock.hcl

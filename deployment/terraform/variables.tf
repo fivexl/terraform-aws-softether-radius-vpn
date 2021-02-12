@@ -98,10 +98,10 @@ variable "instance_type" {
   default     = "t3a.micro"
 }
 
-variable "spot_price" {
-  description = "Spot instance price. No used"
+variable "custom_ec2_spot_price" {
+  description = "Custom EC2 Spot price"
   type        = string
-  default     = "0.0035"
+  default     = ""
 }
 
 variable "key_pair_name" {
