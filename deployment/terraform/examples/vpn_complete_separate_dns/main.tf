@@ -50,7 +50,7 @@ module "srvpn" {
   ldap_addr                      = "ldaps://ldap.jumpcloud.com:636"
   ldap_user_dn                   = "uid={{username}},ou=users,o=XXXXXXXXXXXXXX,dc=jumpcloud,dc=com"
   tags                           = module.tag-generator.result
-  asg_tags                       = module.tag-generator.result_asg_list
+  tags_asg                       = module.tag-generator.result_asg_list
   create_logs                    = true
   log_retention_days             = 7
   create_dns                     = false

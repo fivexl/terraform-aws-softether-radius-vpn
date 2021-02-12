@@ -9,12 +9,12 @@ variable "name" {
 }
 
 variable "tags" {
-  description = "A mapping of tags"
+  description = "A mapping of tags."
   type        = map(string)
   default     = {}
 }
 
-variable "asg_tags" {
+variable "tags_asg" {
   description = "A list of ASG tags"
   default     = []
 }
