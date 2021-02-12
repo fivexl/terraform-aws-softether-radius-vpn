@@ -55,6 +55,12 @@ variable "private_domain_fqdn" {
   default     = ""
 }
 
+variable "create_private_dns_zone" {
+  description = "Create private DNS zone with private_domain_fqnd name and attach to VPC"
+  type        = bool
+  default     = false
+}
+
 #################
 # Instance variables
 #################

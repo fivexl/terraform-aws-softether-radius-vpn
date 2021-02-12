@@ -329,6 +329,17 @@ resource "aws_route53_record" "this" {
   records = [element(aws_eip.this.*.public_ip, count.index)]
 }
 
+resource "aws_route53_zone" "private" {
+  count         = var.create_private_dns_zone && var.private_domain_fqdn != "" ? 1 : 0
+  name          = var.private_domain_fqdn
+  comment       = "Private DNS zone for ${var.name}. Used as is private internal domain"
+  force_destroy = false
+  tags          = var.tags
+  vpc {
+    vpc_id = var.vpc_id
+  }
+}
+
 ##################################
 # LT and ASG
 ##################################
