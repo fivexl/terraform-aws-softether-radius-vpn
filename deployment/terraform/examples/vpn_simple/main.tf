@@ -7,11 +7,11 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  project_name        = lower("vpn")
-  vpc_cidr            = "10.68.0.0/16" # 10.68.0.1 - 10.68.255.254
-  vpc_azs_max         = 3
-  vpc_azs_list        = slice(data.aws_availability_zones.available.names, 0, tonumber(local.vpc_azs_max))
-  vpc_public_subnets  = ["10.68.32.0/19", "10.68.64.0/19", "10.68.96.0/19"]
+  project_name       = lower("vpn")
+  vpc_cidr           = "10.68.0.0/16" # 10.68.0.1 - 10.68.255.254
+  vpc_azs_max        = 3
+  vpc_azs_list       = slice(data.aws_availability_zones.available.names, 0, tonumber(local.vpc_azs_max))
+  vpc_public_subnets = ["10.68.32.0/19", "10.68.64.0/19", "10.68.96.0/19"]
 }
 
 module "tag-generator" {
