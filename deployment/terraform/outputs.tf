@@ -1,10 +1,10 @@
 locals {
-  this_vpn_dns_fqdn = var.create_dns ? concat(aws_route53_record.this.*.fqdn, "") : ""
+  this_vpn_dns_fqdn_list = var.create_dns ? aws_route53_record.this.*.fqdn : [""]
 }
 
 output "this_vpn_dns_fqdn_list" {
   description = "List of FQDN for created VPN instances"
-  value       = local.this_vpn_dns_fqdn
+  value       = local.this_vpn_dns_fqdn_list
 }
 
 output "this_vpn_public_ip" {
