@@ -51,7 +51,10 @@ module "srvpn" {
   asg_tags                       = module.tag-generator.result_asg_list
   create_logs                    = true
   log_retention_days             = 7
-  create_dns                     = false
+  create_dns                     = true
+  dns_zone_name                  = "fivexl.cloud"
+  dns_a_record_prefix            = "srvpn-"
+  enable_azs_in_dns_a_record     = true
   create_private_dns_zone        = true
   private_domain_fqdn            = "internal.fivexl.cloud"
   instance_type                  = "t2.micro"
