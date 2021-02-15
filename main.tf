@@ -304,6 +304,7 @@ data "http" "operator_ip" {
 
 resource "aws_security_group_rule" "external_admin" {
   count             = var.enable_vpn_admin_external_access ? 1 : 0
+  description       = "${var.name} Admin Maintence access."
   from_port         = var.vpn_admin_port
   protocol          = "tcp"
   security_group_id = aws_security_group.this.id
