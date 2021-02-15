@@ -8,8 +8,8 @@ Softether based VPN with LDAP/MFA auth via RADIUS with multi-AZ deployment
 
 | Name | Version |
 |------|---------|
-| terraform | >= 0.13 |
-| aws | >= 3.13.0 |
+| terraform | >= 0.14 |
+| aws | >= 3.22.0 |
 
 ## Inputs
 
