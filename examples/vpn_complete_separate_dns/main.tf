@@ -39,33 +39,35 @@ module "vpc" {
 }
 
 module "srvpn" {
-  source                         = "../../"
-  name                           = "softether-radius-vpn"
-  ami_name_prefix                = "softether-radius-vpn"
-  ami_owner                      = "self"
-  azs                            = [module.vpc.azs[0]]
-  subnets                        = [module.vpc.public_subnets[0]]
-  vpc_id                         = module.vpc.vpc_id
-  target_cidr                    = module.vpc.vpc_cidr_block
-  ldap_addr                      = "ldaps://ldap.jumpcloud.com:636"
-  ldap_user_dn                   = "uid={{username}},ou=users,o=XXXXXXXXXXXXXX,dc=jumpcloud,dc=com"
-  tags                           = module.tag-generator.result
-  tags_asg                       = module.tag-generator.result_asg_list
-  create_logs                    = true
-  log_retention_days             = 7
-  create_dns                     = false
-  dns_a_record_prefix            = "srvpn-"
-  enable_azs_in_dns_a_record     = true
-  create_private_dns_zone        = true
-  private_domain_fqdn            = "internal.fivexl.cloud"
-  instance_type                  = "t2.micro"
-  enable_detailed_monitoring     = false
-  enable_spot_instance           = true
-  enable_session_manager_connect = true
-  vpn_cidr                       = "10.78.0.0/24" # 10.78.0.1 - 10.78.0.254
-  vpn_dhcp_start                 = 10
-  vpn_dhcp_end                   = 200
-  vpn_admin_port                 = "5555"
+  source                           = "../../"
+  name                             = "softether-radius-vpn"
+  ami_name_prefix                  = "softether-radius-vpn"
+  ami_owner                        = "self"
+  azs                              = [module.vpc.azs[0]]
+  subnets                          = [module.vpc.public_subnets[0]]
+  vpc_id                           = module.vpc.vpc_id
+  target_cidr                      = module.vpc.vpc_cidr_block
+  ldap_addr                        = "ldaps://ldap.jumpcloud.com:636"
+  ldap_user_dn                     = "uid={{username}},ou=users,o=XXXXXXXXXXXXXX,dc=jumpcloud,dc=com"
+  tags                             = module.tag-generator.result
+  tags_asg                         = module.tag-generator.result_asg_list
+  create_logs                      = true
+  log_retention_days               = 7
+  create_dns                       = false
+  dns_a_record_prefix              = "srvpn-"
+  enable_azs_in_dns_a_record       = true
+  create_private_dns_zone          = true
+  private_domain_fqdn              = "internal.fivexl.cloud"
+  instance_type                    = "t2.micro"
+  enable_detailed_monitoring       = false
+  enable_spot_instance             = true
+  enable_session_manager_connect   = true
+  vpn_cidr                         = "10.78.0.0/24" # 10.78.0.1 - 10.78.0.254
+  vpn_dhcp_start                   = 10
+  vpn_dhcp_end                     = 200
+  vpn_admin_port                   = "5555"
+  enable_vpn_admin_external_access = false
+  enable_dhcp_gw                   = true
 }
 
 output "srvpn_vpn_dns_names_list" {

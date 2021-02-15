@@ -134,6 +134,12 @@ variable "enable_session_manager_connect" {
   default     = true
 }
 
+variable "enable_vpn_admin_external_access" {
+  description = "Enable external access to admin MGMT. It used only for maintenance. Only external IP of the operator."
+  type        = bool
+  default     = false
+}
+
 #################
 # VPN variables
 #################
@@ -165,6 +171,12 @@ variable "vpn_admin_port" {
   description = "VPN admin port for connect via MGMT client"
   type        = string
   default     = "5555"
+}
+
+variable "enable_dhcp_gw" {
+  description = "Enable push Gateway to clients. Route all networks through VPN."
+  type        = bool
+  default     = true
 }
 
 #################

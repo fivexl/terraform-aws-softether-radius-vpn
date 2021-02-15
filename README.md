@@ -48,6 +48,8 @@ Softether based VPN with LDAP/MFA auth via RADIUS with multi-AZ deployment
 | vpn_dhcp_start | VPN DHCP start cidrhost() hostnum | `number` | `10` | no |
 | vpn_dhcp_end | VPN DHCP end cidrhost() hostnum | `number` | `200` | no |
 | vpn_admin_port | VPN admin port for connect via MGMT client | `string` | `"5555"` | no |
+| enable_dhcp_gw | Enable push Gateway to clients. Route all networks through VPN. | `bool` | `true` | no |
+| enable_vpn_admin_external_access | Enable external access to admin MGMT. It used only for maintenance. Only external IP of the operator. | `bool` | `false` | no |
 
 
 ## Outputs
@@ -70,6 +72,7 @@ Apache 2 Licensed. See LICENSE for full details.
 - Prepare AWS credentials. Environment variables AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY or AWS_PROFILE are supported.
 - [Install Hashicorp Packer](https://learn.hashicorp.com/tutorials/packer/getting-started-install?in=packer/getting-started)
 - [Build an Image](https://learn.hashicorp.com/tutorials/packer/getting-started-build-image?in=packer/getting-started): run `packer build softether-radius-vpn.json` in `ami/softether-radius-vpn` folder
+
 ### Packer variables
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
@@ -91,6 +94,7 @@ Apache 2 Licensed. See LICENSE for full details.
 - Phase 1 algos: aes256-sha1-modp2048,aes128-sha1-modp2048
 - Phase 2 algos: aes256-sha1,aes128-sha1
 - Add routes. Ubuntu default client doesn't support DHCP Classless Static Routes
+- Enable "Use this connection only for resources on its network" in case of `enable_dhcp_gw` = `false` or if split routing is required. 
 
 Guide with pictures [here](https://help.vpntunnel.com/support/solutions/articles/5000782608-vpntunnel-l2tp-installation-guide-for-ubuntu-18-04-)
 
@@ -99,6 +103,11 @@ Guide with pictures [here](https://help.vpntunnel.com/support/solutions/articles
 - Connect VPN
 - Add record to private DNS zone
 - Try to resolve: nslookup test-record.private-zone.your-domain.com
+
+## WebGUI
+- SoftEther VPN Server HTML5 Ajax-based Web Administration Console (Under construction!)
+- Available on `vpn_admin_port` (`5555` by default)
+
 
 ## VPN TODO
 - Add DUO support

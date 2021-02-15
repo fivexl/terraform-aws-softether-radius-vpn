@@ -141,10 +141,11 @@ data "template_file" "softether_config" {
     PSK             = random_password.psk.result
     RADIUS_SECRET   = random_password.radius_secret.result
     SERVER_PASSWORD = random_password.server_password.result
+    VIRTUAL_IP      = cidrhost(var.vpn_cidr, 1)
     DHCP_START      = cidrhost(var.vpn_cidr, var.vpn_dhcp_start)
     DHCP_END        = cidrhost(var.vpn_cidr, var.vpn_dhcp_end)
     DHCP_MASK       = cidrnetmask(var.vpn_cidr)
-    DHCP_GW         = cidrhost(var.vpn_cidr, 1)
+    DHCP_GW         = var.enable_dhcp_gw ? cidrhost(var.vpn_cidr, 1) : "none"
     DHCP_DNS        = cidrhost(var.vpn_cidr, 1)
     DOMAIN          = var.private_domain_fqdn != "" ? var.private_domain_fqdn : "none"
     PUSH_ROUTE      = join("/", [cidrhost(var.target_cidr, 0), cidrnetmask(var.target_cidr), cidrhost(var.vpn_cidr, 1)])
@@ -294,6 +295,21 @@ resource "aws_security_group" "this" {
     cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS009
   }
   tags = var.tags
+}
+
+data "http" "operator_ip" {
+  count = var.enable_vpn_admin_external_access ? 1 : 0
+  url   = "http://ipv4.icanhazip.com" # http://checkip.amazonaws.com/
+}
+
+resource "aws_security_group_rule" "external_admin" {
+  count             = var.enable_vpn_admin_external_access ? 1 : 0
+  from_port         = var.vpn_admin_port
+  protocol          = "tcp"
+  security_group_id = aws_security_group.this.id
+  to_port           = var.vpn_admin_port
+  type              = "ingress"
+  cidr_blocks       = ["${chomp(data.http.operator_ip[0].body)}/32"]
 }
 
 resource "aws_network_interface" "this" {
