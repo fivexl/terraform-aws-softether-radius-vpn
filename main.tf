@@ -401,7 +401,7 @@ data "aws_availability_zones" "available" {
 }
 
 module "ec2_spot_price" {
-  count                         = var.custom_ec2_spot_price == "" ? 1 : 0
+  count                         = var.custom_ec2_spot_price == "" && var.enable_spot_instance ? 1 : 0
   source                        = "fivexl/ec2-spot-price/aws"
   version                       = "1.0.3"
   instance_type                 = var.instance_type
