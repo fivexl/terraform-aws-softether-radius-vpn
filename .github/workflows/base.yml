@@ -50,3 +50,12 @@ jobs:
         uses: triat/terraform-security-scan@v2.0.2
         with:
           tfsec_actions_comment: false
+
+  packer:
+    name: packer
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/packer:latest
+    steps:
+      - uses: actions/checkout@master
+      - run: packer validate -syntax-only ami/softether-radius-vpn/softether-radius-vpn.json
