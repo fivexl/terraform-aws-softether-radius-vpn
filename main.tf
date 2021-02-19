@@ -399,8 +399,8 @@ data "aws_availability_zones" "available" {
 module "ec2_spot_price" {
   count                         = var.custom_ec2_spot_price == "" && var.enable_spot_instance ? 1 : 0
   source                        = "fivexl/ec2-spot-price/aws"
-  version                       = "1.0.3"
-  instance_type                 = var.instance_type
+  version                       = "2.0.0"
+  instance_types_list           = [var.instance_type]
   availability_zones_names_list = data.aws_availability_zones.available.names
 }
 
@@ -430,7 +430,7 @@ resource "aws_autoscaling_group" "this" {
       on_demand_base_capacity                  = var.enable_spot_instance ? 0 : 1 # how many on-demand
       on_demand_percentage_above_base_capacity = 0
       spot_allocation_strategy                 = "capacity-optimized"
-      spot_max_price                           = var.custom_ec2_spot_price == "" && var.enable_spot_instance? module.ec2_spot_price[0].spot_price_over : var.custom_ec2_spot_price
+      spot_max_price                           = var.custom_ec2_spot_price == "" && var.enable_spot_instance ? module.ec2_spot_price[0].spot_price_current_max_mod : var.custom_ec2_spot_price
     }
   }
   instance_refresh {
