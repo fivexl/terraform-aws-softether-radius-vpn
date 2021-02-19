@@ -265,10 +265,6 @@ data "aws_ami" "this" {
   }
 }
 
-resource "aws_ebs_encryption_by_default" "this" {
-  enabled = true
-}
-
 resource "aws_security_group" "this" {
   name        = var.name
   description = "Allow ${var.name} IPSEC/L2TP"
