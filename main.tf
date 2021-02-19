@@ -163,6 +163,7 @@ data "template_file" "config_gcfg" {
     DUO_IKEY      = var.duo_ikey
     DUO_SKEY      = var.duo_skey
     DUO_API_HOST  = var.duo_api_host
+    DUO_TIME_OUT  = var.duo_time_out
     FILE_PATH     = local.path_rserver_config
   }
 }

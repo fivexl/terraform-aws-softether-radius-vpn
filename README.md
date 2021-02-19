@@ -67,6 +67,7 @@ module "softether_radius_vpn" {
 | duo_ikey | DUO ikey | `string` | `""` | no |
 | duo_skey | DUO skey | `string` | `""` | no |
 | duo_api_host | DUO API host | `string` | `""` | no |
+| duo_time_out | DUO TimeOut (seconds) | `number` | `60` | no |
 | instance_type | Type of EC2 instance. We recommend to use t3a.micro | `string` | `"t3a.micro"` | no |
 | enable_spot_instance | Use spot instance for all VPN instances | `bool` | `true` | no |
 | ami_name_prefix | The name prefix used for search AMI image | `string` | `"softether-radius-vpn"` | no |

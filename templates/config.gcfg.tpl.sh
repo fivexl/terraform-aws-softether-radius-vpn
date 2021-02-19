@@ -11,4 +11,5 @@ Enabled=${DUO_ENABLED}
 IKey=${DUO_IKEY}
 SKey=${DUO_SKEY}
 APIHost=${DUO_API_HOST}
+TimeOut=${DUO_TIME_OUT}
 EOL

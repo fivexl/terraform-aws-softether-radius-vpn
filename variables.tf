@@ -216,3 +216,9 @@ variable "duo_api_host" {
   type        = string
   default     = ""
 }
+
+variable "duo_time_out" {
+  description = "DUO TimeOut (seconds)"
+  type        = number
+  default     = 60
+}
