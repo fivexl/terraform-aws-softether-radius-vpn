@@ -1,7 +1,7 @@
 {
   "variables": {
-    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
-    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+    "aws_access_key": "",
+    "aws_secret_key": "",
     "aws_profile": "{{env `AWS_PROFILE`}}",
     "name": "softether-radius-vpn",
     "ami_region": "{{env `AWS_DEFAULT_REGION`}}",
