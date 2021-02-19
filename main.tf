@@ -430,7 +430,7 @@ resource "aws_autoscaling_group" "this" {
       on_demand_base_capacity                  = var.enable_spot_instance ? 0 : 1 # how many on-demand
       on_demand_percentage_above_base_capacity = 0
       spot_allocation_strategy                 = "capacity-optimized"
-      spot_max_price                           = var.custom_ec2_spot_price == "" ? module.ec2_spot_price[0].spot_price_over : var.custom_ec2_spot_price
+      spot_max_price                           = var.custom_ec2_spot_price == "" && var.enable_spot_instance? module.ec2_spot_price[0].spot_price_over : var.custom_ec2_spot_price
     }
   }
   instance_refresh {
