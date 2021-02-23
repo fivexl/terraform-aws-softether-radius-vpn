@@ -6,8 +6,7 @@
     "name": "softether-radius-vpn",
     "ami_region": "{{env `AWS_DEFAULT_REGION`}}",
     "rserver_version": "v0.0.2",
-    "softether_vpnserver_version": "v4.34-9745-beta",
-    "softether_vpnserver_release_date": "2020.04.05"
+    "softether_vpnserver_version": "4.34-9745-beta"
   },
   "builders": [
     {
@@ -90,16 +89,22 @@
     {
       "type": "shell",
       "inline": [
-        "curl -OL https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/{{ user `softether_vpnserver_version` }}/softether-vpnserver-{{ user `softether_vpnserver_version` }}-{{ user `softether_vpnserver_release_date` }}-linux-x64-64bit.tar.gz",
-        "tar xvf softether-vpnserver-{{ user `softether_vpnserver_version` }}-{{ user `softether_vpnserver_release_date` }}-linux-x64-64bit.tar.gz",
-        "rm -rf softether-vpnserver-{{ user `softether_vpnserver_version` }}-{{ user `softether_vpnserver_release_date` }}-linux-x64-64bit.tar.gz",
-        "sudo mv vpnserver /usr/local",
+        "curl -OL https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/archive/v{{ user `softether_vpnserver_version` }}.tar.gz",
+        "tar xvf v{{ user `softether_vpnserver_version` }}.tar.gz && rm -rf v{{ user `softether_vpnserver_version` }}.tar.gz",
+        "cd SoftEtherVPN_Stable-{{ user `softether_vpnserver_version` }}",
         "echo Use development tools to build VPN",
         "sudo yum groupinstall \"Development Tools\" -y",
-        "cd /usr/local/vpnserver/",
-        "make i_read_and_agree_the_license_agreement",
-        "chmod 600 *",
-        "chmod 700 vpncmd vpnserver",
+        "sudo yum install readline-devel ncurses-devel openssl-devel -y",
+        "echo Set RADIUS_RETRY_TIMEOUT to 60. Currently hardcoded to 10",
+        "sed -i 's|#define\\s\\{1,\\}RADIUS_RETRY_TIMEOUT\\s\\{1,\\}(10\\s\\{1,\\}\\*\\s\\{1,\\}1000)|#define RADIUS_RETRY_TIMEOUT (60 * 1000)|' src/Cedar/Radius.h",
+        "grep RADIUS_RETRY_TIMEOUT src/Cedar/Radius.h",
+        "./configure",
+        "make",
+        "sudo make install",
+        "rm -rf ~/SoftEtherVPN_Stable-{{ user `softether_vpnserver_version` }}",
+        "cd /usr/vpncmd/",
+        "sudo chmod 600 .",
+        "sudo chmod 700 vpncmd",
         "sudo yum groups remove \"Development Tools\" -y",
         "echo based on  base on https://www.softether.org/4-docs/1-manual/7._Installing_SoftEther_VPN_Server/7.3_Install_on_Linux_and_Initial_Configurations#7.3.8_Registering_a_Startup_Script",
         "sudo mv /tmp/vpn/scripts/vpnserver /etc/init.d/vpnserver",

@@ -101,7 +101,7 @@ resource "aws_iam_instance_profile" "this" {
 ##################################
 
 locals {
-  path_softether_config = "/usr/local/vpnserver/softether.config"
+  path_softether_config = "/usr/vpnserver/softether.config"
   path_rserver_config   = "/usr/local/rserver/config.gcfg"
   path_iptables_rules   = "/etc/iptables.rules"
   path_awslogs_config   = "/etc/awslogs/awslogs.conf"
@@ -198,7 +198,7 @@ data "template_file" "awscli_conf" {
 data "template_cloudinit_config" "this" {
   gzip          = true
   base64_encode = true
-  # Generate softether_config.template and put it to /usr/local/vpnserver/softether.config
+  # Generate softether_config.template and put it to /usr/vpnserver/softether.config
   part {
     content_type = "text/x-shellscript"
     content      = data.template_file.softether_config.rendered
@@ -228,7 +228,7 @@ data "template_cloudinit_config" "this" {
     content_type = "text/x-shellscript"
     content      = <<-EOF
     #!/bin/bash
-    sudo /usr/local/vpnserver/vpncmd localhost:"${var.vpn_admin_port}" /SERVER /IN:"${local.path_softether_config}" /OUT:config.log
+    sudo /usr/vpncmd/vpncmd localhost:"${var.vpn_admin_port}" /SERVER /IN:"${local.path_softether_config}" /OUT:config.log
     sudo chmod 700 "${local.path_rserver_config}" && sudo chown nobody:nobody "${local.path_rserver_config}"
     sudo systemctl restart vpnserver
     sudo systemctl enable rserver.service

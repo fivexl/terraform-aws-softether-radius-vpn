@@ -11,17 +11,17 @@ log_stream_name = {instance_id}
 initial_position = start_of_file
 log_group_name = ${RSERVER_LOG}
 
-[/usr/local/vpnserver/security_log/DEFAULT]
+[/usr/vpnserver/security_log/DEFAULT]
 datetime_format = %b %d %H:%M:%S
-file = /usr/local/vpnserver/security_log/DEFAULT/sec_*
+file = /usr/vpnserver/security_log/DEFAULT/sec_*
 buffer_duration = 5000
 log_stream_name = {instance_id}
 initial_position = start_of_file
 log_group_name = ${VPN_SERVER_LOG}
 
-[/usr/local/vpnserver/server_log]
+[/usr/vpnserver/server_log]
 datetime_format = %b %d %H:%M:%S
-file = /usr/local/vpnserver/server_log/vpn_*
+file = /usr/vpnserver/server_log/vpn_*
 buffer_duration = 5000
 log_stream_name = {instance_id}
 initial_position = start_of_file
