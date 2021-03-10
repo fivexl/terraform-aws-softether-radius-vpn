@@ -43,6 +43,7 @@ source "amazon-ebs" "amzn2" {
   secret_key    = var.aws_secret_key
   ami_name      = local.ami_name
   instance_type = "t2.micro"
+  encrypt_boot  = true
   profile       = var.aws_profile
   region        = var.ami_region
   run_tags = {
